@@ -1,126 +1,113 @@
-import { Github, Twitter, Linkedin, Mail } from "lucide-react"
+import Icon from "@/components/ui/icon"
 
 export function Footer() {
   return (
-    <footer className="bg-black border-t border-red-500/20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Brand */}
-          <div className="col-span-1 md:col-span-2">
-            <h2 className="font-orbitron text-2xl font-bold text-white mb-4">
-              Synapse<span className="text-red-500">AI</span>
-            </h2>
-            <p className="font-space-mono text-gray-300 mb-6 max-w-md">
-              Продвигаем будущее нейросвязи с передовыми технологиями интерфейса мозг-компьютер.
-            </p>
-            <div className="flex space-x-4">
-              <a href="#" className="text-gray-400 hover:text-red-500 transition-colors duration-200">
-                <Twitter size={20} />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-red-500 transition-colors duration-200">
-                <Github size={20} />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-red-500 transition-colors duration-200">
-                <Linkedin size={20} />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-red-500 transition-colors duration-200">
-                <Mail size={20} />
-              </a>
+    <footer id="contact" className="bg-[#070B13] border-t border-primary/10 pt-20 pb-8">
+      <div className="container mx-auto px-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+          {/* Company info */}
+          <div>
+            <div className="font-heading text-2xl font-extrabold text-white mb-2">
+              MAXI<span className="text-primary">SOFT</span>
             </div>
+            <div className="text-secondary text-xs mb-4 font-body">
+              IT-подразделение ООО «ДДМАКСИ СТРОЙРЕМСЕРВИС»
+            </div>
+            <p className="text-muted-foreground text-sm font-body leading-relaxed">
+              Создаем digital-решения с 2020 года. Применяем инженерный подход из сферы 
+              авторемонта к разработке IT-продуктов.
+            </p>
           </div>
 
-          {/* Product */}
+          {/* Navigation */}
           <div>
-            <h3 className="font-orbitron text-white font-semibold mb-4">Продукт</h3>
-            <ul className="space-y-2">
+            <h4 className="text-white font-heading font-semibold text-lg mb-6 relative pb-3 after:absolute after:bottom-0 after:left-0 after:w-10 after:h-[2px] after:bg-primary">
+              Навигация
+            </h4>
+            <ul className="space-y-3">
               <li>
-                <a
-                  href="#technology"
-                  className="font-space-mono text-gray-400 hover:text-red-500 transition-colors duration-200"
-                >
-                  Технологии
+                <a href="#services" className="text-muted-foreground hover:text-primary transition-colors font-body text-sm">
+                  Услуги
                 </a>
               </li>
               <li>
-                <a
-                  href="#applications"
-                  className="font-space-mono text-gray-400 hover:text-red-500 transition-colors duration-200"
-                >
-                  Применения
+                <a href="#portfolio" className="text-muted-foreground hover:text-primary transition-colors font-body text-sm">
+                  Портфолио
                 </a>
               </li>
               <li>
-                <a
-                  href="#safety"
-                  className="font-space-mono text-gray-400 hover:text-red-500 transition-colors duration-200"
-                >
-                  Безопасность
+                <a href="#process" className="text-muted-foreground hover:text-primary transition-colors font-body text-sm">
+                  Процесс
                 </a>
               </li>
               <li>
-                <a
-                  href="#faq"
-                  className="font-space-mono text-gray-400 hover:text-red-500 transition-colors duration-200"
-                >
-                  Вопросы
+                <a href="#about" className="text-muted-foreground hover:text-primary transition-colors font-body text-sm">
+                  О нас
                 </a>
               </li>
             </ul>
           </div>
 
-          {/* Company */}
+          {/* Services */}
           <div>
-            <h3 className="font-orbitron text-white font-semibold mb-4">Компания</h3>
-            <ul className="space-y-2">
+            <h4 className="text-white font-heading font-semibold text-lg mb-6 relative pb-3 after:absolute after:bottom-0 after:left-0 after:w-10 after:h-[2px] after:bg-primary">
+              Услуги
+            </h4>
+            <ul className="space-y-3">
               <li>
-                <a href="#" className="font-space-mono text-gray-400 hover:text-red-500 transition-colors duration-200">
-                  О нас
+                <a href="#services" className="text-muted-foreground hover:text-primary transition-colors font-body text-sm">
+                  Веб-приложения
                 </a>
               </li>
               <li>
-                <a href="#" className="font-space-mono text-gray-400 hover:text-red-500 transition-colors duration-200">
-                  Карьера
+                <a href="#services" className="text-muted-foreground hover:text-primary transition-colors font-body text-sm">
+                  Корпоративные сайты
                 </a>
               </li>
               <li>
-                <a href="#" className="font-space-mono text-gray-400 hover:text-red-500 transition-colors duration-200">
-                  Пресса
+                <a href="#services" className="text-muted-foreground hover:text-primary transition-colors font-body text-sm">
+                  Мобильные приложения
                 </a>
               </li>
               <li>
-                <a href="#" className="font-space-mono text-gray-400 hover:text-red-500 transition-colors duration-200">
-                  Контакты
+                <a href="#contact" className="text-muted-foreground hover:text-primary transition-colors font-body text-sm">
+                  Техническая поддержка
                 </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Contacts */}
+          <div>
+            <h4 className="text-white font-heading font-semibold text-lg mb-6 relative pb-3 after:absolute after:bottom-0 after:left-0 after:w-10 after:h-[2px] after:bg-primary">
+              Контакты
+            </h4>
+            <ul className="space-y-4">
+              <li className="flex items-start gap-3 text-muted-foreground font-body text-sm">
+                <Icon name="Mail" size={16} className="text-primary mt-1 flex-shrink-0" />
+                <span>digital@ddmaxi.ru</span>
+              </li>
+              <li className="flex items-start gap-3 text-muted-foreground font-body text-sm">
+                <Icon name="Phone" size={16} className="text-primary mt-1 flex-shrink-0" />
+                <span>+7 (XXX) XXX-XX-XX</span>
+              </li>
+              <li className="flex items-start gap-3 text-muted-foreground font-body text-sm">
+                <Icon name="MapPin" size={16} className="text-primary mt-1 flex-shrink-0" />
+                <span>г. Москва, ул. Авторемонтная, д. 15</span>
+              </li>
+              <li className="flex items-start gap-3 text-muted-foreground font-body text-sm">
+                <Icon name="Car" size={16} className="text-primary mt-1 flex-shrink-0" />
+                <span>Основная деятельность: ремонт автотранспорта</span>
               </li>
             </ul>
           </div>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="mt-8 pt-8 border-t border-red-500/20">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="font-space-mono text-gray-400 text-sm">2025 SynapseAI. Все права защищены.</p>
-            <div className="flex space-x-6 mt-4 md:mt-0">
-              <a
-                href="#"
-                className="font-space-mono text-gray-400 hover:text-red-500 text-sm transition-colors duration-200"
-              >
-                Конфиденциальность
-              </a>
-              <a
-                href="#"
-                className="font-space-mono text-gray-400 hover:text-red-500 text-sm transition-colors duration-200"
-              >
-                Условия использования
-              </a>
-              <a
-                href="#"
-                className="font-space-mono text-gray-400 hover:text-red-500 text-sm transition-colors duration-200"
-              >
-                Cookie-политика
-              </a>
-            </div>
-          </div>
+        {/* Bottom */}
+        <div className="border-t border-border pt-8 text-center">
+          <p className="text-muted-foreground text-sm font-body">
+            © 2023 MaxiSoft. IT-направление компании ООО «ДДМАКСИ СТРОЙРЕМСЕРВИС». Все права защищены.
+          </p>
         </div>
       </div>
     </footer>

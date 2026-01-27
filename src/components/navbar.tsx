@@ -1,83 +1,129 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Menu, X } from "lucide-react"
+import Icon from "@/components/ui/icon"
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50)
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-[9999] bg-black/95 backdrop-blur-md border-b border-red-500/20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+    <nav className={`fixed top-0 left-0 right-0 z-[9999] backdrop-blur-md border-b transition-all duration-300 ${
+      isScrolled 
+        ? 'bg-[#0F1419]/95 border-primary/20 py-3 shadow-lg shadow-black/30' 
+        : 'bg-[#0F1419]/95 border-primary/20 py-5'
+    }`}>
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between">
           {/* Logo */}
-          <div className="flex-shrink-0">
-            <h1 className="font-orbitron text-xl font-bold text-white">
-              Maxi<span className="text-red-500">Soft</span>
+          <div className="flex items-center gap-3">
+            <h1 className="font-heading text-2xl font-extrabold text-white">
+              MAXI<span className="text-primary">SOFT</span>
             </h1>
+            <div className="hidden lg:block text-[10px] text-muted-foreground max-w-[150px] leading-tight font-body">
+              IT-решения от компании по ремонту автотранспорта
+            </div>
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:block">
-            <div className="ml-10 flex items-baseline space-x-8">
-              <a
-                href="#technology"
-                className="font-geist text-white hover:text-red-500 transition-colors duration-200"
-              >
-                Решения
-              </a>
-              <a href="#safety" className="font-geist text-white hover:text-red-500 transition-colors duration-200">
-                Преимущества
-              </a>
-              <a href="#faq" className="font-geist text-white hover:text-red-500 transition-colors duration-200">
-                Контакты
-              </a>
-            </div>
+          <div className="hidden md:flex items-center space-x-8">
+            <a
+              href="#services"
+              className="font-body text-muted-foreground hover:text-primary transition-colors duration-200 font-medium relative after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-[2px] after:bg-primary after:transition-all hover:after:w-full"
+            >
+              Услуги
+            </a>
+            <a 
+              href="#portfolio" 
+              className="font-body text-muted-foreground hover:text-primary transition-colors duration-200 font-medium relative after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-[2px] after:bg-primary after:transition-all hover:after:w-full"
+            >
+              Портфолио
+            </a>
+            <a 
+              href="#process" 
+              className="font-body text-muted-foreground hover:text-primary transition-colors duration-200 font-medium relative after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-[2px] after:bg-primary after:transition-all hover:after:w-full"
+            >
+              Процесс
+            </a>
+            <a 
+              href="#about" 
+              className="font-body text-muted-foreground hover:text-primary transition-colors duration-200 font-medium relative after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-[2px] after:bg-primary after:transition-all hover:after:w-full"
+            >
+              О нас
+            </a>
+            <a 
+              href="#contact" 
+              className="font-body text-muted-foreground hover:text-primary transition-colors duration-200 font-medium relative after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-[2px] after:bg-primary after:transition-all hover:after:w-full"
+            >
+              Контакты
+            </a>
           </div>
 
           {/* CTA Button */}
           <div className="hidden md:block">
-            <Button className="bg-red-500 hover:bg-red-600 text-white font-geist border-0">Заказать проект</Button>
+            <Button className="bg-gradient-to-r from-primary to-[#FF8E53] hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-1 transition-all duration-300 font-heading border-0">
+              Обсудить проект
+            </Button>
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden">
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="text-white hover:text-red-500 transition-colors duration-200"
-            >
-              {isOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </div>
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="md:hidden text-white hover:text-primary transition-colors duration-200"
+          >
+            {isOpen ? <Icon name="X" size={24} /> : <Icon name="Menu" size={24} />}
+          </button>
         </div>
 
         {/* Mobile Navigation */}
         {isOpen && (
-          <div className="md:hidden">
-            <div className="px-2 pt-2 pb-3 space-y-1 bg-black/98 border-t border-red-500/20">
+          <div className="md:hidden mt-4 pb-4 border-t border-primary/20">
+            <div className="pt-4 space-y-3">
               <a
-                href="#technology"
-                className="block px-3 py-2 font-geist text-white hover:text-red-500 transition-colors duration-200"
+                href="#services"
+                className="block px-3 py-2 font-body text-white hover:text-primary transition-colors duration-200"
                 onClick={() => setIsOpen(false)}
               >
-                Решения
+                Услуги
               </a>
               <a
-                href="#safety"
-                className="block px-3 py-2 font-geist text-white hover:text-red-500 transition-colors duration-200"
+                href="#portfolio"
+                className="block px-3 py-2 font-body text-white hover:text-primary transition-colors duration-200"
                 onClick={() => setIsOpen(false)}
               >
-                Преимущества
+                Портфолио
               </a>
               <a
-                href="#faq"
-                className="block px-3 py-2 font-geist text-white hover:text-red-500 transition-colors duration-200"
+                href="#process"
+                className="block px-3 py-2 font-body text-white hover:text-primary transition-colors duration-200"
+                onClick={() => setIsOpen(false)}
+              >
+                Процесс
+              </a>
+              <a
+                href="#about"
+                className="block px-3 py-2 font-body text-white hover:text-primary transition-colors duration-200"
+                onClick={() => setIsOpen(false)}
+              >
+                О нас
+              </a>
+              <a
+                href="#contact"
+                className="block px-3 py-2 font-body text-white hover:text-primary transition-colors duration-200"
                 onClick={() => setIsOpen(false)}
               >
                 Контакты
               </a>
               <div className="px-3 py-2">
-                <Button className="w-full bg-red-500 hover:bg-red-600 text-white font-geist border-0">
-                  Заказать проект
+                <Button className="w-full bg-gradient-to-r from-primary to-[#FF8E53] font-heading border-0">
+                  Обсудить проект
                 </Button>
               </div>
             </div>

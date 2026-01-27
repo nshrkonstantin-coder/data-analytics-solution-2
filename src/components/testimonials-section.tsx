@@ -1,64 +1,78 @@
 import { Card, CardContent } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
 
-const testimonials = [
+const portfolioItems = [
   {
-    name: "Алексей Петров",
-    role: "Директор сети автосервисов \"AutoPro\"",
-    avatar: "/professional-woman-scientist.png",
-    content:
-      "MaxiSoft создали для нас CRM-систему, которая увеличила количество записей на 50%. Теперь клиенты записываются круглосуточно онлайн.",
+    category: "Веб-приложение",
+    name: "Система управления автопарком AutoFleet Pro",
+    tech: "React / Node.js / PostgreSQL",
+    large: true
   },
   {
-    name: "Марина Соколова",
-    role: "Владелец автосервиса \"CarFix\"",
-    avatar: "/cybersecurity-expert-man.jpg",
-    content:
-      "Мобильное приложение от MaxiSoft решило проблему забытых записей. Push-уведомления работают отлично!",
+    category: "Мобильное приложение",
+    name: "Приложение для автосервиса ServiceConnect",
+    tech: "Flutter / Firebase"
   },
   {
-    name: "Дмитрий Ковалёв",
-    role: "Руководитель сервисного центра \"MotorTech\"",
-    avatar: "/asian-woman-tech-developer.jpg",
-    content:
-      "Интеграция с 1C прошла без проблем. Теперь всё данные синхронизируются автоматически, а ручная работа сократилась на 80%.",
-  },
+    category: "Корпоративный сайт",
+    name: "Портал для логистической компании",
+    tech: "Vue.js / Laravel"
+  }
 ]
 
 export function TestimonialsSection() {
   return (
-    <section className="py-24 px-6 bg-card">
-      <div className="max-w-6xl mx-auto">
+    <section id="portfolio" className="py-24 bg-[#070B13] relative">
+      {/* Background decoration */}
+      <div className="absolute top-0 left-0 w-full h-full">
+        <div className="absolute top-1/3 left-1/3 w-[400px] h-[400px] bg-primary/3 rounded-full blur-3xl" />
+      </div>
+
+      <div className="container mx-auto px-4 relative z-10">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-card-foreground mb-4 font-sans">Отзывы клиентов</h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Что говорят владельцы автосервисов о наших решениях
-          </p>
+          <div className="text-primary font-heading font-semibold text-sm tracking-[0.2em] uppercase mb-4">
+            Наши разработки
+          </div>
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4 font-heading">
+            Реализованные проекты
+          </h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {testimonials.map((testimonial, index) => (
-            <Card key={index} className="glow-border slide-up" style={{ animationDelay: `${index * 0.15}s` }}>
-              <CardContent className="p-6">
-                <p className="text-card-foreground mb-6 leading-relaxed italic">"{testimonial.content}"</p>
-                <div className="flex items-center gap-4">
-                  <Avatar>
-                    <AvatarImage src={testimonial.avatar || "/placeholder.svg"} alt={testimonial.name} />
-                    <AvatarFallback>
-                      {testimonial.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </AvatarFallback>
-                  </Avatar>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+          {portfolioItems.map((item, index) => (
+            <Card
+              key={index}
+              className={`${
+                item.large ? 'md:col-span-2' : ''
+              } h-[300px] bg-gradient-to-br from-card/80 to-card/40 border-border hover:border-primary/30 transition-all duration-300 overflow-hidden group relative`}
+            >
+              <CardContent className="p-0 h-full relative">
+                {/* Gradient overlay on hover */}
+                <div className="absolute inset-0 bg-gradient-to-t from-background/95 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-8">
                   <div>
-                    <p className="font-semibold text-primary">{testimonial.name}</p>
-                    <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                    <div className="text-primary font-heading font-semibold text-sm uppercase tracking-wider mb-2">
+                      {item.category}
+                    </div>
+                    <h3 className="text-white text-2xl font-bold font-heading mb-2">
+                      {item.name}
+                    </h3>
+                    <div className="text-secondary text-sm font-body">
+                      {item.tech}
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        <div className="text-center">
+          <Button 
+            variant="outline" 
+            className="border-2 border-secondary hover:bg-secondary/10 hover:border-primary hover:text-primary transition-all duration-300 font-heading px-8 py-6"
+          >
+            Показать все проекты
+          </Button>
         </div>
       </div>
     </section>

@@ -1,83 +1,80 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import Icon from "@/components/ui/icon"
 
 const features = [
   {
     title: "Веб-приложения",
-    description: "Современные веб-приложения для управления автосервисом: запись клиентов, контроль заказов, автоматизация процессов.",
-    icon: "brain",
-    badge: "Web",
+    description: "CRM/ERP системы для бизнеса, личные кабинеты и порталы, панели управления и аналитики, сервисы автоматизации.",
+    icon: "LaptopMinimal",
+    features: [
+      "CRM/ERP системы для бизнеса",
+      "Личные кабинеты и порталы",
+      "Панели управления и аналитики",
+      "Сервисы автоматизации"
+    ]
+  },
+  {
+    title: "Корпоративные сайты",
+    description: "Сайты-визитки и промо-сайты, интернет-магазины и каталоги, лендинги и презентации, корпоративные порталы.",
+    icon: "Globe",
+    features: [
+      "Сайты-визитки и промо-сайты",
+      "Интернет-магазины и каталоги",
+      "Лендинги и презентации",
+      "Корпоративные порталы"
+    ]
   },
   {
     title: "Мобильные приложения",
-    description: "Приложения для iOS и Android: мобильная запись, онлайн-оплата, пуш-уведомления для клиентов.",
-    icon: "lock",
-    badge: "Mobile",
-  },
-  {
-    title: "CRM-системы",
-    description: "Полноценная CRM для учёта клиентов, автомобилей, истории ремонтов и автоматических напоминаний.",
-    icon: "globe",
-    badge: "CRM",
-  },
-  {
-    title: "Интеграции",
-    description: "Подключение платёжных систем, SMS-уведомлений, интеграция с 1C и другими системами.",
-    icon: "zap",
-    badge: "API",
-  },
-  {
-    title: "Техподдержка",
-    description: "Полное сопровождение проекта: обновления, исправления, консультации и быстрый отклик.",
-    icon: "link",
-    badge: "24/7",
-  },
-  {
-    title: "Облачные решения",
-    description: "Размещение на надёжных серверах с автоматическими резервными копиями и защитой данных.",
-    icon: "target",
-    badge: "Cloud",
+    description: "Приложения для iOS и Android, кроссплатформенные решения, бизнес-приложения и утилиты.",
+    icon: "Smartphone",
+    features: [
+      "Приложения для iOS и Android",
+      "Кроссплатформенные решения",
+      "Бизнес-приложения и утилиты",
+      "Приложения для клиентов"
+    ]
   },
 ]
 
 export function FeaturesSection() {
   return (
-    <section className="py-24 px-6 bg-background">
+    <section id="services" className="py-24 px-6 bg-background">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-foreground mb-4 font-sans">Наши решения</h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Комплексная разработка IT-решений для автосервисов и автобизнеса
-          </p>
+          <div className="text-primary font-heading font-semibold text-sm tracking-[0.2em] uppercase mb-4">
+            Наши IT-услуги
+          </div>
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4 font-heading">
+            Что мы создаем в digital-сфере
+          </h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => (
             <Card
               key={index}
-              className="glow-border hover:shadow-lg transition-all duration-300 slide-up"
-              style={{ animationDelay: `${index * 0.1}s` }}
+              className="bg-card/50 backdrop-blur-sm border-border hover:border-primary/30 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:shadow-primary/10 group"
             >
               <CardHeader>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-3xl">
-                    {feature.icon === "brain" && "&#129504;"}
-                    {feature.icon === "lock" && "&#128274;"}
-                    {feature.icon === "globe" && "&#127760;"}
-                    {feature.icon === "zap" && "&#9889;"}
-                    {feature.icon === "link" && "&#128279;"}
-                    {feature.icon === "target" && "&#127919;"}
-                  </span>
-                  <Badge variant="secondary" className="bg-accent text-accent-foreground">
-                    {feature.badge}
-                  </Badge>
+                <div className="mb-6">
+                  <div className="text-primary group-hover:text-secondary transition-colors duration-300">
+                    <Icon name={feature.icon} size={48} />
+                  </div>
                 </div>
-                <CardTitle className="text-xl font-bold text-card-foreground">{feature.title}</CardTitle>
+                <CardTitle className="text-2xl font-bold text-white font-heading">
+                  {feature.title}
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-muted-foreground leading-relaxed">
-                  {feature.description}
-                </CardDescription>
+                <ul className="space-y-2">
+                  {feature.features.map((item, i) => (
+                    <li key={i} className="text-muted-foreground font-body flex items-start">
+                      <span className="text-primary mr-2">–</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
               </CardContent>
             </Card>
           ))}

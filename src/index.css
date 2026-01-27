@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Play:wght@400;700&family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Open+Sans:wght@300;400;500;600&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -6,83 +6,83 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 216 20% 8%;
+    --foreground: 216 15% 85%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 216 20% 6%;
+    --card-foreground: 216 15% 85%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 216 20% 6%;
+    --popover-foreground: 216 15% 85%;
 
-    --primary: 0 84% 60%;
+    --primary: 12 100% 60%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 10%;
+    --secondary: 195 100% 50%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
+    --muted: 216 15% 63%;
+    --muted-foreground: 216 10% 63%;
 
-    --accent: 0 84% 60%;
+    --accent: 12 100% 60%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 90%;
-    --input: 0 0% 100%;
-    --ring: 0 84% 60%;
+    --border: 0 0% 100% / 0.1;
+    --input: 216 20% 10%;
+    --ring: 12 100% 60%;
 
-    --radius: 0.625rem;
+    --radius: 0.25rem;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 0 84% 60%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 0 84% 60%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 0 84% 60%;
+    --sidebar-background: 216 20% 6%;
+    --sidebar-foreground: 216 15% 85%;
+    --sidebar-primary: 12 100% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 216 20% 10%;
+    --sidebar-accent-foreground: 216 15% 85%;
+    --sidebar-border: 0 0% 100% / 0.1;
+    --sidebar-ring: 12 100% 60%;
   }
 
   .dark {
-    --background: 0 0% 3%;
-    --foreground: 0 0% 98%;
+    --background: 216 20% 8%;
+    --foreground: 216 15% 85%;
 
-    --card: 0 0% 5%;
-    --card-foreground: 0 0% 98%;
+    --card: 216 20% 6%;
+    --card-foreground: 216 15% 85%;
 
-    --popover: 0 0% 5%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 216 20% 6%;
+    --popover-foreground: 216 15% 85%;
 
-    --primary: 0 84% 60%;
+    --primary: 12 100% 60%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 10%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 195 100% 50%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 0 0% 10%;
-    --muted-foreground: 0 0% 65%;
+    --muted: 216 20% 10%;
+    --muted-foreground: 216 10% 63%;
 
-    --accent: 0 84% 60%;
+    --accent: 12 100% 60%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 15%;
-    --input: 0 0% 10%;
-    --ring: 0 84% 60%;
+    --border: 0 0% 100% / 0.1;
+    --input: 216 20% 10%;
+    --ring: 12 100% 60%;
 
-    --sidebar-background: 0 0% 5%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 0 84% 60%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 0 0% 10%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 0 0% 15%;
-    --sidebar-ring: 0 84% 60%;
+    --sidebar-background: 216 20% 6%;
+    --sidebar-foreground: 216 15% 85%;
+    --sidebar-primary: 12 100% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 216 20% 10%;
+    --sidebar-accent-foreground: 216 15% 85%;
+    --sidebar-border: 0 0% 100% / 0.1;
+    --sidebar-ring: 12 100% 60%;
   }
 }
 
@@ -101,20 +101,12 @@
 }
 
 @layer components {
-  .font-orbitron {
-    font-family: 'Play', sans-serif;
+  .font-heading {
+    font-family: "Montserrat", sans-serif;
   }
 
-  .font-geist {
-    font-family: 'Inter', system-ui, sans-serif;
-  }
-
-  .font-space-mono {
-    font-family: 'JetBrains Mono', monospace;
-  }
-
-  .font-display {
-    font-family: 'Play', sans-serif;
+  .font-body {
+    font-family: "Open Sans", sans-serif;
   }
 
   .fade-in {
@@ -136,7 +128,8 @@
   .glow-border {
     position: relative;
     border: 1px solid transparent;
-    background: linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
+    background:
+      linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
       linear-gradient(45deg, hsl(var(--primary)), hsl(var(--accent))) border-box;
   }
 

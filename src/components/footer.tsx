@@ -8,7 +8,7 @@ export function Footer() {
           {/* Company info */}
           <div>
             <div className="font-heading text-2xl font-extrabold text-white mb-2">
-              MAXI<span className="text-primary">SOFT</span>
+              MAXI<span className="text-primary">SOFT</span><span className="text-secondary">ZAB</span>
             </div>
             <div className="text-secondary text-xs mb-4 font-body">
               IT-подразделение ООО «ДДМАКСИ СТРОЙРЕМСЕРВИС»
@@ -106,7 +106,7 @@ export function Footer() {
         {/* Bottom */}
         <div className="border-t border-border pt-8 text-center">
           <p className="text-muted-foreground text-sm font-body">
-            © 2023 MaxiSoft. IT-направление компании ООО «ДДМАКСИ СТРОЙРЕМСЕРВИС». Все права защищены.
+            © 2023 MaxiSoftZAB. IT-направление компании ООО «ДДМАКСИ СТРОЙРЕМСЕРВИС». Все права защищены.
           </p>
         </div>
       </div>

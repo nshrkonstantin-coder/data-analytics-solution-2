@@ -25,7 +25,7 @@ export function Navbar() {
           {/* Logo */}
           <div className="flex items-center gap-3">
             <h1 className="font-heading text-2xl font-extrabold text-white">
-              MAXI<span className="text-primary">SOFT</span>
+              MAXI<span className="text-primary">SOFT</span><span className="text-secondary">ZAB</span>
             </h1>
             <div className="hidden lg:block text-[10px] text-muted-foreground max-w-[150px] leading-tight font-body">
               IT-решения от компании по ремонту автотранспорта

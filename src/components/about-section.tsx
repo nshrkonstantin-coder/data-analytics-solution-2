@@ -32,7 +32,7 @@ export function AboutSection() {
           {/* Text */}
           <div className="space-y-6 font-body text-muted-foreground">
             <p>
-              <strong className="text-white">MaxiSoft</strong> — это IT-подразделение компании{" "}
+              <strong className="text-white">MaxiSoftZAB</strong> — это IT-подразделение компании{" "}
               <strong className="text-white">«ДДМАКСИ СТРОЙРЕМСЕРВИС»</strong>, которая уже много лет 
               специализируется на техническом обслуживании и ремонте автотранспортных средств.
             </p>

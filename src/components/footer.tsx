@@ -106,7 +106,7 @@ export function Footer() {
         {/* Bottom */}
         <div className="border-t border-border pt-8 text-center">
           <p className="text-muted-foreground text-sm font-body">
-            © 2023 MaxiSoftZAB. IT-направление компании ООО «ДДМАКСИ СТРОЙРЕМСЕРВИС». Все права защищены.
+            © 2026 MaxiSoftZAB. IT-направление компании ООО «ДДМАКСИ СТРОЙРЕМСЕРВИС». Все права защищены.
           </p>
         </div>
       </div>

@@ -80,6 +80,8 @@ def handler(event: dict, context) -> dict:
                 return update_product(conn, body)
             elif action == 'update-order':
                 return update_order(conn, body)
+            elif action == 'user':
+                return update_user(conn, body)
         
         cursor.close()
         conn.close()
@@ -317,5 +319,74 @@ def update_order(conn, body: dict) -> dict:
         'statusCode': 200,
         'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
         'body': json.dumps({'message': 'Статус заказа обновлен'}),
+        'isBase64Encoded': False
+    }
+
+
+def update_user(conn, body: dict) -> dict:
+    user_id = body.get('id')
+    email = body.get('email')
+    full_name = body.get('full_name')
+    phone = body.get('phone')
+    role = body.get('role')
+    
+    if role and role not in ['user', 'admin']:
+        return {
+            'statusCode': 400,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'Недопустимая роль'}),
+            'isBase64Encoded': False
+        }
+    
+    cursor = conn.cursor()
+    
+    # Проверка уникальности email
+    if email:
+        cursor.execute("SELECT id FROM users WHERE email = %s AND id != %s", (email, user_id))
+        if cursor.fetchone():
+            cursor.close()
+            return {
+                'statusCode': 400,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Email уже используется'}),
+                'isBase64Encoded': False
+            }
+    
+    # Обновление данных
+    update_fields = []
+    params = []
+    
+    if email:
+        update_fields.append('email = %s')
+        params.append(email)
+    if full_name is not None:
+        update_fields.append('full_name = %s')
+        params.append(full_name)
+    if phone is not None:
+        update_fields.append('phone = %s')
+        params.append(phone)
+    if role:
+        update_fields.append('role = %s')
+        params.append(role)
+    
+    if not update_fields:
+        cursor.close()
+        return {
+            'statusCode': 400,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'Нет данных для обновления'}),
+            'isBase64Encoded': False
+        }
+    
+    params.append(user_id)
+    query = f"UPDATE users SET {', '.join(update_fields)}, updated_at = NOW() WHERE id = %s"
+    cursor.execute(query, params)
+    conn.commit()
+    cursor.close()
+    
+    return {
+        'statusCode': 200,
+        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+        'body': json.dumps({'message': 'Данные пользователя обновлены'}),
         'isBase64Encoded': False
     }

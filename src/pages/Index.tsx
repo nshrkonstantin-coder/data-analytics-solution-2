@@ -30,8 +30,8 @@ export default function Index() {
         <section id="faq">
           <FAQSection />
         </section>
-        <ContactForm />
         <CTASection />
+        <ContactForm />
       </main>
       <Footer />
     </div>

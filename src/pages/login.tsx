@@ -20,14 +20,21 @@ export function LoginPage() {
     setLoading(true)
 
     try {
+      console.log('[LOGIN PAGE] Submitting form')
       const response = await authService.login(formData.email, formData.password)
+      console.log('[LOGIN PAGE] Login response:', response)
+      console.log('[LOGIN PAGE] User role:', response.user.role)
       
       if (response.user.role === 'admin') {
+        console.log('[LOGIN PAGE] Navigating to /admin')
         navigate('/admin')
       } else {
+        console.log('[LOGIN PAGE] Navigating to /dashboard')
         navigate('/dashboard')
       }
+      console.log('[LOGIN PAGE] Navigation complete')
     } catch (err) {
+      console.error('[LOGIN PAGE] Error:', err)
       setError(err instanceof Error ? err.message : 'Ошибка входа')
     } finally {
       setLoading(false)

@@ -37,6 +37,9 @@ export const authService = {
   },
 
   async login(email: string, password: string): Promise<AuthResponse> {
+    console.log('[AUTH] Attempting login:', email)
+    console.log('[AUTH] API URL:', `${AUTH_API_URL}?action=login`)
+    
     const response = await fetch(`${AUTH_API_URL}?action=login`, {
       method: 'POST',
       headers: {
@@ -45,14 +48,18 @@ export const authService = {
       body: JSON.stringify({ email, password }),
     })
 
+    console.log('[AUTH] Response status:', response.status)
     const data = await response.json()
+    console.log('[AUTH] Response data:', data)
 
     if (!response.ok) {
+      console.error('[AUTH] Login failed:', data.error)
       throw new Error(data.error || 'Ошибка входа')
     }
 
     localStorage.setItem('auth_token', data.token)
     localStorage.setItem('user', JSON.stringify(data.user))
+    console.log('[AUTH] Login successful, token saved')
 
     return data
   },

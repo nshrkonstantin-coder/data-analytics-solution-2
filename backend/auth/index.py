@@ -199,7 +199,9 @@ def login_user(conn, body: dict) -> dict:
 
 
 def logout_user(conn, event: dict) -> dict:
-    token = event.get('headers', {}).get('x-authorization', '').replace('Bearer ', '')
+    headers = event.get('headers', {})
+    token = headers.get('x-authorization', '') or headers.get('X-Authorization', '')
+    token = token.replace('Bearer ', '')
     
     if not token:
         return {
@@ -224,13 +226,15 @@ def logout_user(conn, event: dict) -> dict:
 
 
 def verify_session(conn, event: dict) -> dict:
-    token = event.get('headers', {}).get('x-authorization', '').replace('Bearer ', '')
+    headers = event.get('headers', {})
+    token = headers.get('x-authorization', '') or headers.get('X-Authorization', '')
+    token = token.replace('Bearer ', '')
     
     if not token:
         return {
             'statusCode': 401,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': 'Токен не предоставлен'}),
+            'body': json.dumps({'error': f'Токен не предоставлен. Headers: {list(headers.keys())}'}),
             'isBase64Encoded': False
         }
     
@@ -276,7 +280,9 @@ def verify_session(conn, event: dict) -> dict:
 
 
 def change_password(conn, event: dict, body: dict) -> dict:
-    token = event.get('headers', {}).get('x-authorization', '').replace('Bearer ', '')
+    headers = event.get('headers', {})
+    token = headers.get('x-authorization', '') or headers.get('X-Authorization', '')
+    token = token.replace('Bearer ', '')
     
     if not token:
         return {

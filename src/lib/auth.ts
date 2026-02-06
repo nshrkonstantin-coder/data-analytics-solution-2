@@ -82,12 +82,15 @@ export const authService = {
 
   async verifySession(): Promise<{ valid: boolean; user?: User }> {
     const token = localStorage.getItem('auth_token')
+    console.log('[AUTH] Verifying session, token exists:', !!token)
 
     if (!token) {
+      console.log('[AUTH] No token found')
       return { valid: false }
     }
 
     try {
+      console.log('[AUTH] Sending verify request with token:', token.substring(0, 10) + '...')
       const response = await fetch(`${AUTH_API_URL}?action=verify`, {
         method: 'GET',
         headers: {
@@ -95,16 +98,21 @@ export const authService = {
         },
       })
 
+      console.log('[AUTH] Verify response status:', response.status)
       const data = await response.json()
+      console.log('[AUTH] Verify response data:', data)
 
       if (!response.ok) {
+        console.error('[AUTH] Verification failed, clearing tokens')
         localStorage.removeItem('auth_token')
         localStorage.removeItem('user')
         return { valid: false }
       }
 
+      console.log('[AUTH] Verification successful')
       return data
-    } catch {
+    } catch (err) {
+      console.error('[AUTH] Verification error:', err)
       return { valid: false }
     }
   },

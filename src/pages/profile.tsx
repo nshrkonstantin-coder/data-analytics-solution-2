@@ -159,6 +159,31 @@ export function ProfilePage() {
             </div>
           </div>
 
+          {user?.role === 'admin' && (
+            <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/30 rounded-2xl p-8 mb-6">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Icon name="Shield" size={24} className="text-purple-400" />
+                    <h2 className="font-heading text-xl font-bold text-white">
+                      Доступ администратора
+                    </h2>
+                  </div>
+                  <p className="text-muted-foreground mb-4">
+                    У вас есть права администратора системы
+                  </p>
+                  <Button
+                    onClick={() => navigate('/admin')}
+                    className="bg-gradient-to-r from-purple-500 to-blue-500 hover:shadow-lg hover:shadow-purple-500/30"
+                  >
+                    <Icon name="Settings" size={18} className="mr-2" />
+                    Панель администратора
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="bg-card/50 backdrop-blur-xl border border-primary/20 rounded-2xl p-8">
             <h2 className="font-heading text-xl font-bold text-white mb-6">
               Безопасность

@@ -64,6 +64,8 @@ def handler(event: dict, context) -> dict:
                 return get_all_products(conn)
             elif action == 'stats':
                 return get_stats(conn)
+            elif action == 'get-orders':
+                return get_orders(conn)
         
         elif method == 'POST':
             body = json.loads(event.get('body', '{}'))
@@ -76,6 +78,8 @@ def handler(event: dict, context) -> dict:
             body = json.loads(event.get('body', '{}'))
             if action == 'product':
                 return update_product(conn, body)
+            elif action == 'update-order':
+                return update_order(conn, body)
         
         cursor.close()
         conn.close()
@@ -252,5 +256,66 @@ def get_stats(conn) -> dict:
                 'revenue': float(revenue) if revenue else 0
             }
         }),
+        'isBase64Encoded': False
+    }
+
+
+def get_orders(conn) -> dict:
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    
+    cursor.execute("""
+        SELECT 
+            o.id,
+            o.user_id,
+            u.email as user_email,
+            u.full_name as user_name,
+            o.product_id,
+            p.title as product_title,
+            o.total_amount,
+            o.status,
+            o.created_at
+        FROM orders o
+        JOIN users u ON o.user_id = u.id
+        JOIN products p ON o.product_id = p.id
+        ORDER BY o.created_at DESC
+    """)
+    
+    orders = cursor.fetchall()
+    cursor.close()
+    
+    return {
+        'statusCode': 200,
+        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+        'body': json.dumps({'orders': orders}, default=str),
+        'isBase64Encoded': False
+    }
+
+
+def update_order(conn, body: dict) -> dict:
+    order_id = body.get('id')
+    status = body.get('status')
+    
+    if status not in ['pending', 'paid', 'completed', 'cancelled']:
+        return {
+            'statusCode': 400,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'Недопустимый статус заказа'}),
+            'isBase64Encoded': False
+        }
+    
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE orders 
+        SET status = %s, updated_at = NOW()
+        WHERE id = %s
+    """, (status, order_id))
+    
+    conn.commit()
+    cursor.close()
+    
+    return {
+        'statusCode': 200,
+        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+        'body': json.dumps({'message': 'Статус заказа обновлен'}),
         'isBase64Encoded': False
     }

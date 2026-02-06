@@ -1,18 +1,21 @@
 {
   "tests": [
     {
-      "name": "Register user with duplicate email",
+      "name": "Login as admin",
       "method": "POST",
-      "path": "/?action=register",
+      "path": "/?action=login",
       "body": {
-        "email": "test@example.com",
-        "password": "testpass123",
-        "full_name": "Test User",
-        "phone": "+7 999 123-45-67"
+        "email": "admin@maxisoftzab.ru",
+        "password": "admin123"
       },
-      "expectedStatus": 409,
+      "expectedStatus": 200,
       "expectedBody": {
-        "error": "string"
+        "message": "string",
+        "token": "string",
+        "user": {
+          "email": "admin@maxisoftzab.ru",
+          "role": "admin"
+        }
       },
       "bodyMatcher": "partial"
     },

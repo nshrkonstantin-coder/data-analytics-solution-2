@@ -22,6 +22,7 @@ export function AdminPage() {
   useEffect(() => {
     const verifyAdmin = async () => {
       const result = await authService.verifySession()
+      
       if (!result.valid) {
         navigate('/login')
       } else if (result.user?.role !== 'admin') {

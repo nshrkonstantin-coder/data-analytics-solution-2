@@ -49,7 +49,7 @@ export const Hero3DWebGL = () => {
               variant="outline" 
               className="border-2 border-secondary hover:bg-secondary/10 hover:border-primary hover:text-primary transition-all duration-300 font-heading text-base px-8 py-6"
               size="lg"
-              onClick={() => document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' })}
+              onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
             >
               Рассчитать стоимость
             </Button>

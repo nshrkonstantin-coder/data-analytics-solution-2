@@ -20,7 +20,7 @@ export function CTASection() {
         <Button 
           size="lg"
           className="bg-gradient-to-r from-primary to-[#FF8E53] hover:shadow-2xl hover:shadow-primary/30 hover:-translate-y-2 transition-all duration-300 font-heading text-lg px-12 py-7"
-          onClick={() => document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' })}
+          onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
         >
           Обсудить проект
         </Button>

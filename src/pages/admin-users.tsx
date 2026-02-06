@@ -26,6 +26,9 @@ export function AdminUsersPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [resetPasswordUser, setResetPasswordUser] = useState<User | null>(null)
+  const [newPassword, setNewPassword] = useState('')
+  const [resettingPassword, setResettingPassword] = useState(false)
 
   useEffect(() => {
     const verifyAdmin = async () => {
@@ -94,6 +97,48 @@ export function AdminUsersPage() {
       setError(err instanceof Error ? err.message : 'Ошибка обновления')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleResetPassword = async () => {
+    if (!resetPasswordUser || !newPassword) return
+    
+    if (newPassword.length < 6) {
+      setError('Пароль должен быть минимум 6 символов')
+      return
+    }
+    
+    setError('')
+    setSuccess('')
+    setResettingPassword(true)
+    
+    const token = localStorage.getItem('auth_token')
+    try {
+      const response = await fetch(`${ADMIN_API_URL}?action=reset-password`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          id: resetPasswordUser.id,
+          new_password: newPassword,
+        }),
+      })
+      
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Ошибка сброса пароля')
+      }
+      
+      setSuccess(`Пароль пользователя ${resetPasswordUser.email} успешно изменен`)
+      setResetPasswordUser(null)
+      setNewPassword('')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ошибка сброса пароля')
+    } finally {
+      setResettingPassword(false)
     }
   }
 
@@ -206,15 +251,31 @@ export function AdminUsersPage() {
                         {new Date(user.created_at).toLocaleDateString('ru-RU')}
                       </td>
                       <td className="px-6 py-4">
-                        <Button
-                          onClick={() => handleEditUser(user)}
-                          size="sm"
-                          variant="outline"
-                          className="border-primary/30 hover:bg-primary/10"
-                        >
-                          <Icon name="Edit" size={16} className="mr-1" />
-                          Изменить
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => handleEditUser(user)}
+                            size="sm"
+                            variant="outline"
+                            className="border-primary/30 hover:bg-primary/10"
+                          >
+                            <Icon name="Edit" size={16} className="mr-1" />
+                            Изменить
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              setResetPasswordUser(user)
+                              setNewPassword('')
+                              setError('')
+                              setSuccess('')
+                            }}
+                            size="sm"
+                            variant="outline"
+                            className="border-orange-500/30 hover:bg-orange-500/10 text-orange-400"
+                          >
+                            <Icon name="Key" size={16} className="mr-1" />
+                            Пароль
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -328,6 +389,93 @@ export function AdminUsersPage() {
                     </Button>
                     <Button
                       onClick={() => setEditingUser(null)}
+                      variant="outline"
+                      className="border-primary/30"
+                    >
+                      Отмена
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {resetPasswordUser && (
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+              <div className="bg-card/95 backdrop-blur-xl border border-primary/20 rounded-2xl p-8 max-w-md w-full">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="font-heading text-2xl font-bold text-white">
+                    Сброс пароля
+                  </h2>
+                  <Button
+                    onClick={() => {
+                      setResetPasswordUser(null)
+                      setNewPassword('')
+                    }}
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-white"
+                  >
+                    <Icon name="X" size={20} />
+                  </Button>
+                </div>
+
+                <div className="mb-6 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                  <p className="text-sm text-muted-foreground mb-1">Пользователь:</p>
+                  <p className="text-white font-medium">{resetPasswordUser.email}</p>
+                  {resetPasswordUser.full_name && (
+                    <p className="text-sm text-muted-foreground mt-1">{resetPasswordUser.full_name}</p>
+                  )}
+                </div>
+
+                {error && (
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-4 flex items-start gap-2">
+                    <Icon name="AlertCircle" size={20} className="text-red-500 mt-0.5 flex-shrink-0" />
+                    <p className="text-red-500 text-sm">{error}</p>
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">
+                      Новый пароль *
+                    </label>
+                    <Input
+                      type="password"
+                      required
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Минимум 6 символов"
+                      className="bg-background/50 border-primary/30 focus:border-primary"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Пользователь сможет войти с новым паролем сразу после сохранения
+                    </p>
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <Button
+                      onClick={handleResetPassword}
+                      disabled={resettingPassword || !newPassword}
+                      className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 hover:shadow-lg hover:shadow-orange-500/30"
+                    >
+                      {resettingPassword ? (
+                        <>
+                          <Icon name="Loader2" size={18} className="animate-spin mr-2" />
+                          Сброс...
+                        </>
+                      ) : (
+                        <>
+                          <Icon name="Key" size={18} className="mr-2" />
+                          Сбросить пароль
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setResetPasswordUser(null)
+                        setNewPassword('')
+                      }}
                       variant="outline"
                       className="border-primary/30"
                     >

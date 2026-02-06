@@ -20,7 +20,9 @@ def handler(event: dict, context) -> dict:
             'isBase64Encoded': False
         }
     
-    token = event.get('headers', {}).get('x-authorization', '').replace('Bearer ', '')
+    headers = event.get('headers', {})
+    token = headers.get('x-authorization', '') or headers.get('X-Authorization', '')
+    token = token.replace('Bearer ', '')
     
     if not token:
         return {
@@ -82,6 +84,8 @@ def handler(event: dict, context) -> dict:
                 return update_order(conn, body)
             elif action == 'user':
                 return update_user(conn, body)
+            elif action == 'reset-password':
+                return reset_user_password(conn, body)
         
         cursor.close()
         conn.close()
@@ -388,5 +392,34 @@ def update_user(conn, body: dict) -> dict:
         'statusCode': 200,
         'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
         'body': json.dumps({'message': 'Данные пользователя обновлены'}),
+        'isBase64Encoded': False
+    }
+
+
+def reset_user_password(conn, body: dict) -> dict:
+    import bcrypt
+    
+    user_id = body.get('id')
+    new_password = body.get('new_password')
+    
+    if not new_password or len(new_password) < 6:
+        return {
+            'statusCode': 400,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'Пароль должен быть минимум 6 символов'}),
+            'isBase64Encoded': False
+        }
+    
+    password_hash = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET password_hash = %s, updated_at = NOW() WHERE id = %s", (password_hash, user_id))
+    conn.commit()
+    cursor.close()
+    
+    return {
+        'statusCode': 200,
+        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+        'body': json.dumps({'message': 'Пароль успешно изменен'}),
         'isBase64Encoded': False
     }

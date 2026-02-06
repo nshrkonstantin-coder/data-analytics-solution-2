@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react"
+import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import Icon from "@/components/ui/icon"
+import { authService } from "@/lib/auth"
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -12,6 +15,10 @@ export function Navbar() {
     }
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  useEffect(() => {
+    setIsAuthenticated(authService.isAuthenticated())
   }, [])
 
   return (
@@ -66,14 +73,28 @@ export function Navbar() {
             </a>
           </div>
 
-          {/* CTA Button */}
-          <div className="hidden md:block">
-            <Button 
-              onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-              className="bg-gradient-to-r from-primary to-[#FF8E53] hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-1 transition-all duration-300 font-heading border-0"
-            >
-              Обсудить проект
-            </Button>
+          {/* Auth Buttons */}
+          <div className="hidden md:flex items-center gap-3">
+            {isAuthenticated ? (
+              <Link to="/dashboard">
+                <Button className="bg-gradient-to-r from-primary to-[#FF8E53] hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-1 transition-all duration-300 font-heading border-0">
+                  Личный кабинет
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="outline" className="border-primary/30 hover:bg-primary/10 font-heading">
+                    Вход
+                  </Button>
+                </Link>
+                <Link to="/register">
+                  <Button className="bg-gradient-to-r from-primary to-[#FF8E53] hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-1 transition-all duration-300 font-heading border-0">
+                    Регистрация
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -124,16 +145,27 @@ export function Navbar() {
               >
                 Контакты
               </a>
-              <div className="px-3 py-2">
-                <Button 
-                  onClick={() => {
-                    setIsOpen(false)
-                    document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })
-                  }}
-                  className="w-full bg-gradient-to-r from-primary to-[#FF8E53] font-heading border-0"
-                >
-                  Обсудить проект
-                </Button>
+              <div className="px-3 py-2 space-y-2">
+                {isAuthenticated ? (
+                  <Link to="/dashboard" onClick={() => setIsOpen(false)}>
+                    <Button className="w-full bg-gradient-to-r from-primary to-[#FF8E53] font-heading border-0">
+                      Личный кабинет
+                    </Button>
+                  </Link>
+                ) : (
+                  <>
+                    <Link to="/login" onClick={() => setIsOpen(false)}>
+                      <Button variant="outline" className="w-full border-primary/30 font-heading">
+                        Вход
+                      </Button>
+                    </Link>
+                    <Link to="/register" onClick={() => setIsOpen(false)}>
+                      <Button className="w-full bg-gradient-to-r from-primary to-[#FF8E53] font-heading border-0">
+                        Регистрация
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>

@@ -1,0 +1,33 @@
+{
+  "tests": [
+    {
+      "name": "Register user with duplicate email",
+      "method": "POST",
+      "path": "/?action=register",
+      "body": {
+        "email": "test@example.com",
+        "password": "testpass123",
+        "full_name": "Test User",
+        "phone": "+7 999 123-45-67"
+      },
+      "expectedStatus": 409,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Verify session with invalid token",
+      "method": "GET",
+      "path": "/?action=verify",
+      "headers": {
+        "Authorization": "Bearer invalid_token"
+      },
+      "expectedStatus": 401,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

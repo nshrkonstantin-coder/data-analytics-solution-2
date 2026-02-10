@@ -16,29 +16,39 @@ interface Content {
   updated_at: string
 }
 
+interface FieldDefinition {
+  key: string
+  label: string
+  type: string
+  current?: string
+  preview?: string
+}
+
 const DEFAULT_SECTIONS = [
-  { id: 'hero', name: 'Главный экран', fields: [
-    { key: 'title', label: 'Заголовок', type: 'text' },
-    { key: 'subtitle', label: 'Подзаголовок', type: 'text' },
-    { key: 'description', label: 'Описание', type: 'textarea' },
+  { id: 'hero', name: '🏠 Главный экран', icon: 'Home', fields: [
+    { key: 'title', label: 'Заголовок', type: 'text', current: 'Цифровые решения', preview: 'Большой заголовок вверху страницы' },
+    { key: 'subtitle', label: 'Подзаголовок', type: 'text', current: 'для вашего бизнеса', preview: 'Вторая строка заголовка' },
+    { key: 'description', label: 'Описание', type: 'textarea', current: 'Мы создаем производительные веб-приложения, сайты и мобильные приложения с той же точностью и надежностью, с которой обслуживаем автотранспорт.', preview: 'Текст под заголовком' },
+    { key: 'button1', label: 'Кнопка 1 (текст)', type: 'text', current: 'Смотреть наши работы', preview: 'Текст на первой кнопке' },
+    { key: 'button2', label: 'Кнопка 2 (текст)', type: 'text', current: 'Рассчитать стоимость', preview: 'Текст на второй кнопке' },
   ]},
-  { id: 'about', name: 'О нас', fields: [
-    { key: 'title', label: 'Заголовок', type: 'text' },
-    { key: 'description', label: 'Описание', type: 'textarea' },
+  { id: 'features', name: '⭐ Преимущества', icon: 'Star', fields: [
+    { key: 'title', label: 'Заголовок секции', type: 'text', current: 'Почему выбирают нас', preview: 'Заголовок секции преимуществ' },
+    { key: 'subtitle', label: 'Подзаголовок', type: 'text', current: 'Наши ключевые особенности', preview: 'Описание под заголовком' },
   ]},
-  { id: 'services', name: 'Услуги', fields: [
-    { key: 'title', label: 'Заголовок секции', type: 'text' },
-    { key: 'subtitle', label: 'Подзаголовок', type: 'text' },
+  { id: 'about', name: 'ℹ️ О нас', icon: 'Info', fields: [
+    { key: 'title', label: 'Заголовок', type: 'text', current: 'О компании MaxiSoftZab', preview: 'Заголовок секции о компании' },
+    { key: 'description', label: 'Описание', type: 'textarea', current: 'MaxiSoftZab — это команда профессионалов, объединяющая экспертизу в разработке программного обеспечения и обслуживании автотранспорта.', preview: 'Основной текст о компании' },
   ]},
-  { id: 'contact', name: 'Контакты', fields: [
-    { key: 'phone', label: 'Телефон', type: 'text' },
-    { key: 'email', label: 'Email', type: 'text' },
-    { key: 'address', label: 'Адрес', type: 'text' },
+  { id: 'contact', name: '📞 Контакты', icon: 'Phone', fields: [
+    { key: 'phone', label: 'Телефон', type: 'text', current: '+7 (999) 123-45-67', preview: 'Номер телефона компании' },
+    { key: 'email', label: 'Email', type: 'text', current: 'info@maxisoftzab.ru', preview: 'Email для связи' },
+    { key: 'address', label: 'Адрес', type: 'text', current: 'г. Чита, ул. Примерная, д. 1', preview: 'Физический адрес офиса' },
   ]},
-  { id: 'footer', name: 'Подвал сайта', fields: [
-    { key: 'company_name', label: 'Название компании', type: 'text' },
-    { key: 'description', label: 'Описание', type: 'textarea' },
-    { key: 'copyright', label: 'Copyright текст', type: 'text' },
+  { id: 'footer', name: '📄 Подвал сайта', icon: 'FileText', fields: [
+    { key: 'company_name', label: 'Название компании', type: 'text', current: 'MAXISOFTZAB', preview: 'Название в подвале' },
+    { key: 'description', label: 'Описание', type: 'textarea', current: 'Разработка программного обеспечения и обслуживание автотранспорта в Забайкалье', preview: 'Краткое описание компании' },
+    { key: 'copyright', label: 'Copyright текст', type: 'text', current: '© 2025 MaxiSoftZab. Все права защищены.', preview: 'Текст копирайта' },
   ]},
 ]
 
@@ -89,7 +99,7 @@ export function AdminContentPage() {
       const existingContent = contentData.find(
         c => c.section === section.id && c.key === field.key
       )
-      sectionData[field.key] = existingContent?.content || ''
+      sectionData[field.key] = existingContent?.content || field.current || ''
     })
     setFormData(sectionData)
   }
@@ -217,49 +227,65 @@ export function AdminContentPage() {
                   </div>
                 )}
 
-                <div className="space-y-6">
+                <div className="space-y-8">
                   {selectedSection.fields.map((field) => (
-                    <div key={field.key} className="space-y-3">
-                      <label className="block text-sm font-medium text-white">
-                        {field.label}
-                      </label>
+                    <div key={field.key} className="border border-primary/20 rounded-xl p-6 bg-background/30 hover:border-primary/40 transition-all">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <label className="block text-base font-semibold text-white mb-1">
+                            {field.label}
+                          </label>
+                          <p className="text-sm text-muted-foreground mb-3">
+                            {(field as FieldDefinition).preview}
+                          </p>
+                        </div>
+                        <Button
+                          onClick={() => handleSave(field.key)}
+                          disabled={saving}
+                          size="sm"
+                          className="bg-gradient-to-r from-primary to-[#FF8E53] hover:shadow-lg hover:shadow-primary/30 ml-4"
+                        >
+                          {saving ? (
+                            <>
+                              <Icon name="Loader2" size={14} className="mr-1 animate-spin" />
+                              Сохранение
+                            </>
+                          ) : (
+                            <>
+                              <Icon name="Save" size={14} className="mr-1" />
+                              Сохранить
+                            </>
+                          )}
+                        </Button>
+                      </div>
+
+                      <div className="bg-card/30 border border-primary/10 rounded-lg p-4 mb-3">
+                        <div className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
+                          <Icon name="Eye" size={14} />
+                          Текущее значение на сайте:
+                        </div>
+                        <div className="text-sm text-white/70 italic">
+                          {formData[field.key] || (field as FieldDefinition).current || 'Не заполнено'}
+                        </div>
+                      </div>
                       
                       {field.type === 'textarea' ? (
                         <textarea
                           value={formData[field.key] || ''}
                           onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
                           rows={4}
-                          className="w-full rounded-md bg-background/50 border border-primary/30 focus:border-primary px-3 py-2 text-white"
-                          placeholder={`Введите ${field.label.toLowerCase()}...`}
+                          className="w-full bg-background/50 border border-primary/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors resize-none"
+                          placeholder={(field as FieldDefinition).current || `Введите ${field.label.toLowerCase()}`}
                         />
                       ) : (
                         <Input
                           type="text"
                           value={formData[field.key] || ''}
                           onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
-                          placeholder={`Введите ${field.label.toLowerCase()}...`}
-                          className="bg-background/50 border-primary/30 focus:border-primary"
+                          className="bg-background/50 border-primary/30 focus:border-primary text-base"
+                          placeholder={(field as FieldDefinition).current || `Введите ${field.label.toLowerCase()}`}
                         />
                       )}
-
-                      <Button
-                        onClick={() => handleSave(field.key)}
-                        disabled={saving}
-                        size="sm"
-                        className="bg-gradient-to-r from-primary to-[#FF8E53] hover:shadow-lg hover:shadow-primary/30"
-                      >
-                        {saving ? (
-                          <>
-                            <Icon name="Loader2" size={16} className="animate-spin mr-2" />
-                            Сохранение...
-                          </>
-                        ) : (
-                          <>
-                            <Icon name="Save" size={16} className="mr-2" />
-                            Сохранить
-                          </>
-                        )}
-                      </Button>
                     </div>
                   ))}
                 </div>

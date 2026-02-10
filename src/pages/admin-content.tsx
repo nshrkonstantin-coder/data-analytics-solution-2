@@ -22,6 +22,7 @@ interface FieldDefinition {
   type: string
   current?: string
   preview?: string
+  imageUrl?: string
 }
 
 const DEFAULT_SECTIONS = [
@@ -50,6 +51,12 @@ const DEFAULT_SECTIONS = [
     { key: 'description', label: 'Описание', type: 'textarea', current: 'Разработка программного обеспечения и обслуживание автотранспорта в Забайкалье', preview: 'Краткое описание компании' },
     { key: 'copyright', label: 'Copyright текст', type: 'text', current: '© 2025 MaxiSoftZab. Все права защищены.', preview: 'Текст копирайта' },
   ]},
+  { id: 'images', name: '🖼️ Изображения', icon: 'Image', fields: [
+    { key: 'logo', label: 'Логотип компании', type: 'image', current: '', preview: 'Логотип в шапке сайта', imageUrl: 'https://via.placeholder.com/200x80?text=LOGO' },
+    { key: 'hero_bg', label: 'Фон главного экрана', type: 'image', current: '', preview: 'Фоновое изображение на главной', imageUrl: 'https://via.placeholder.com/1920x1080?text=Hero+Background' },
+    { key: 'about_image', label: 'Изображение "О нас"', type: 'image', current: '', preview: 'Картинка в секции о компании', imageUrl: 'https://via.placeholder.com/800x600?text=About+Us' },
+    { key: 'cta_image', label: 'Призыв к действию', type: 'image', current: '', preview: 'Изображение в CTA секции', imageUrl: 'https://via.placeholder.com/600x400?text=CTA' },
+  ]},
 ]
 
 export function AdminContentPage() {
@@ -61,6 +68,7 @@ export function AdminContentPage() {
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState('')
   const [error, setError] = useState('')
+  const [uploadingImage, setUploadingImage] = useState<string | null>(null)
 
   useEffect(() => {
     const verifyAdmin = async () => {
@@ -109,6 +117,54 @@ export function AdminContentPage() {
     loadSectionData(section, content)
     setSuccess('')
     setError('')
+  }
+
+  const handleImageUpload = async (fieldKey: string, file: File) => {
+    setUploadingImage(fieldKey)
+    setError('')
+
+    try {
+      const reader = new FileReader()
+      reader.onloadend = async () => {
+        const base64 = reader.result as string
+        const token = localStorage.getItem('auth_token')
+
+        try {
+          const response = await fetch(`${ADMIN_API_URL}?action=content`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              section: selectedSection.id,
+              key: fieldKey,
+              content: base64,
+              content_type: 'image',
+            }),
+          })
+
+          const data = await response.json()
+
+          if (!response.ok) {
+            throw new Error(data.error || 'Ошибка загрузки изображения')
+          }
+
+          setSuccess(`Изображение "${selectedSection.fields.find(f => f.key === fieldKey)?.label}" загружено`)
+          setFormData({ ...formData, [fieldKey]: base64 })
+          await loadContent()
+          setTimeout(() => setSuccess(''), 3000)
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Ошибка загрузки изображения')
+        } finally {
+          setUploadingImage(null)
+        }
+      }
+      reader.readAsDataURL(file)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ошибка чтения файла')
+      setUploadingImage(null)
+    }
   }
 
   const handleSave = async (fieldKey: string) => {
@@ -239,52 +295,93 @@ export function AdminContentPage() {
                             {(field as FieldDefinition).preview}
                           </p>
                         </div>
-                        <Button
-                          onClick={() => handleSave(field.key)}
-                          disabled={saving}
-                          size="sm"
-                          className="bg-gradient-to-r from-primary to-[#FF8E53] hover:shadow-lg hover:shadow-primary/30 ml-4"
-                        >
-                          {saving ? (
-                            <>
-                              <Icon name="Loader2" size={14} className="mr-1 animate-spin" />
-                              Сохранение
-                            </>
-                          ) : (
-                            <>
-                              <Icon name="Save" size={14} className="mr-1" />
-                              Сохранить
-                            </>
-                          )}
-                        </Button>
+                        {field.type !== 'image' && (
+                          <Button
+                            onClick={() => handleSave(field.key)}
+                            disabled={saving}
+                            size="sm"
+                            className="bg-gradient-to-r from-primary to-[#FF8E53] hover:shadow-lg hover:shadow-primary/30 ml-4"
+                          >
+                            {saving ? (
+                              <>
+                                <Icon name="Loader2" size={14} className="mr-1 animate-spin" />
+                                Сохранение
+                              </>
+                            ) : (
+                              <>
+                                <Icon name="Save" size={14} className="mr-1" />
+                                Сохранить
+                              </>
+                            )}
+                          </Button>
+                        )}
                       </div>
 
-                      <div className="bg-card/30 border border-primary/10 rounded-lg p-4 mb-3">
-                        <div className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
-                          <Icon name="Eye" size={14} />
-                          Текущее значение на сайте:
+                      {field.type === 'image' ? (
+                        <div className="space-y-4">
+                          <div className="bg-card/30 border border-primary/10 rounded-lg p-4">
+                            <div className="text-xs text-muted-foreground mb-3 flex items-center gap-2">
+                              <Icon name="Eye" size={14} />
+                              Текущее изображение:
+                            </div>
+                            <div className="relative w-full aspect-video bg-background/50 rounded-lg overflow-hidden border border-primary/20">
+                              <img
+                                src={formData[field.key] || (field as FieldDefinition).imageUrl || 'https://via.placeholder.com/400x300?text=No+Image'}
+                                alt={field.label}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0]
+                                if (file) handleImageUpload(field.key, file)
+                              }}
+                              className="bg-background/50 border-primary/30 focus:border-primary"
+                              disabled={uploadingImage === field.key}
+                            />
+                            {uploadingImage === field.key && (
+                              <div className="flex items-center gap-2 text-primary">
+                                <Icon name="Loader2" size={18} className="animate-spin" />
+                                <span className="text-sm">Загрузка...</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <div className="text-sm text-white/70 italic">
-                          {formData[field.key] || (field as FieldDefinition).current || 'Не заполнено'}
-                        </div>
-                      </div>
-                      
-                      {field.type === 'textarea' ? (
-                        <textarea
-                          value={formData[field.key] || ''}
-                          onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
-                          rows={4}
-                          className="w-full bg-background/50 border border-primary/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors resize-none"
-                          placeholder={(field as FieldDefinition).current || `Введите ${field.label.toLowerCase()}`}
-                        />
                       ) : (
-                        <Input
-                          type="text"
-                          value={formData[field.key] || ''}
-                          onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
-                          className="bg-background/50 border-primary/30 focus:border-primary text-base"
-                          placeholder={(field as FieldDefinition).current || `Введите ${field.label.toLowerCase()}`}
-                        />
+                        <>
+                          <div className="bg-card/30 border border-primary/10 rounded-lg p-4 mb-3">
+                            <div className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
+                              <Icon name="Eye" size={14} />
+                              Текущее значение на сайте:
+                            </div>
+                            <div className="text-sm text-white/70 italic">
+                              {formData[field.key] || (field as FieldDefinition).current || 'Не заполнено'}
+                            </div>
+                          </div>
+                          
+                          {field.type === 'textarea' ? (
+                            <textarea
+                              value={formData[field.key] || ''}
+                              onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
+                              rows={4}
+                              className="w-full bg-background/50 border border-primary/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors resize-none"
+                              placeholder={(field as FieldDefinition).current || `Введите ${field.label.toLowerCase()}`}
+                            />
+                          ) : (
+                            <Input
+                              type="text"
+                              value={formData[field.key] || ''}
+                              onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
+                              className="bg-background/50 border-primary/30 focus:border-primary text-base"
+                              placeholder={(field as FieldDefinition).current || `Введите ${field.label.toLowerCase()}`}
+                            />
+                          )}
+                        </>
                       )}
                     </div>
                   ))}

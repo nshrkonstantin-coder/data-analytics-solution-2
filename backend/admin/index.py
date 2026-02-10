@@ -20,20 +20,27 @@ def handler(event: dict, context) -> dict:
             'isBase64Encoded': False
         }
     
-    headers = event.get('headers', {})
-    token = headers.get('x-authorization', '') or headers.get('X-Authorization', '')
-    token = token.replace('Bearer ', '')
-    
-    if not token:
-        return {
-            'statusCode': 401,
-            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': 'Требуется авторизация'}),
-            'isBase64Encoded': False
-        }
+    action = event.get('queryStringParameters', {}).get('action', '')
     
     try:
         conn = psycopg2.connect(os.environ['DATABASE_URL'])
+        
+        if method == 'GET' and action == 'content':
+            return get_site_content(conn)
+        
+        headers = event.get('headers', {})
+        token = headers.get('x-authorization', '') or headers.get('X-Authorization', '')
+        token = token.replace('Bearer ', '')
+        
+        if not token:
+            conn.close()
+            return {
+                'statusCode': 401,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Требуется авторизация'}),
+                'isBase64Encoded': False
+            }
+        
         cursor = conn.cursor(cursor_factory=RealDictCursor)
         
         cursor.execute("""
@@ -54,8 +61,6 @@ def handler(event: dict, context) -> dict:
                 'body': json.dumps({'error': 'Доступ запрещен. Требуются права администратора'}),
                 'isBase64Encoded': False
             }
-        
-        action = event.get('queryStringParameters', {}).get('action', '')
         
         if method == 'GET':
             if action == 'content':

@@ -1,6 +1,10 @@
 import Icon from "@/components/ui/icon"
+import { useContent } from "@/hooks/useContent"
 
 export function Footer() {
+  const { content: footerContent } = useContent('footer')
+  const { content: contactContent } = useContent('contact')
+
   return (
     <footer id="contact" className="bg-[#070B13] border-t border-primary/10 pt-20 pb-8">
       <div className="container mx-auto px-4">
@@ -8,14 +12,13 @@ export function Footer() {
           {/* Company info */}
           <div>
             <div className="font-heading text-2xl font-extrabold text-white mb-2">
-              MAXI<span className="text-primary">SOFT</span><span className="text-secondary">ZAB</span>
+              {footerContent.company_name || 'MAXISOFTZAB'}
             </div>
             <div className="text-secondary text-xs mb-4 font-body">
               IT-подразделение ООО «ДДМАКСИ СТРОЙРЕМСЕРВИС»
             </div>
             <p className="text-muted-foreground text-sm font-body leading-relaxed">
-              Создаем digital-решения с 2020 года. Применяем инженерный подход из сферы 
-              авторемонта к разработке IT-продуктов.
+              {footerContent.description || 'Разработка программного обеспечения и обслуживание автотранспорта в Забайкалье'}
             </p>
           </div>
 
@@ -85,15 +88,15 @@ export function Footer() {
             <ul className="space-y-4">
               <li className="flex items-start gap-3 text-muted-foreground font-body text-sm">
                 <Icon name="Mail" size={16} className="text-primary mt-1 flex-shrink-0" />
-                <span>digital@ddmaxi.ru</span>
+                <span>{contactContent.email || 'info@maxisoftzab.ru'}</span>
               </li>
               <li className="flex items-start gap-3 text-muted-foreground font-body text-sm">
                 <Icon name="Phone" size={16} className="text-primary mt-1 flex-shrink-0" />
-                <span>+7 (XXX) XXX-XX-XX</span>
+                <span>{contactContent.phone || '+7 (999) 123-45-67'}</span>
               </li>
               <li className="flex items-start gap-3 text-muted-foreground font-body text-sm">
                 <Icon name="MapPin" size={16} className="text-primary mt-1 flex-shrink-0" />
-                <span>г. Москва, ул. Авторемонтная, д. 15</span>
+                <span>{contactContent.address || 'г. Чита, ул. Примерная, д. 1'}</span>
               </li>
               <li className="flex items-start gap-3 text-muted-foreground font-body text-sm">
                 <Icon name="Car" size={16} className="text-primary mt-1 flex-shrink-0" />
@@ -106,7 +109,7 @@ export function Footer() {
         {/* Bottom */}
         <div className="border-t border-border pt-8 text-center">
           <p className="text-muted-foreground text-sm font-body">
-            © 2026 MaxiSoftZAB. IT-направление компании ООО «ДДМАКСИ СТРОЙРЕМСЕРВИС». Все права защищены.
+            {footerContent.copyright || '© 2025 MaxiSoftZab. Все права защищены.'}
           </p>
         </div>
       </div>

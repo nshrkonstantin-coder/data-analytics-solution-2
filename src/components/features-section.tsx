@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Icon from "@/components/ui/icon"
+import { useContent } from "@/hooks/useContent"
 
 const features = [
   {
@@ -38,15 +39,17 @@ const features = [
 ]
 
 export function FeaturesSection() {
+  const { content } = useContent('features')
+
   return (
     <section id="services" className="py-24 px-6 bg-background">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
           <div className="text-primary font-heading font-semibold text-sm tracking-[0.2em] uppercase mb-4">
-            Наши IT-услуги
+            {content.subtitle || 'Наши ключевые особенности'}
           </div>
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-4 font-heading">
-            Что мы создаем в digital-сфере
+            {content.title || 'Почему выбирают нас'}
           </h2>
         </div>
 

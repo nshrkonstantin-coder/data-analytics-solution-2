@@ -1,4 +1,8 @@
+import { useContent } from "@/hooks/useContent"
+
 export function AboutSection() {
+  const { content } = useContent('about')
+
   return (
     <section id="about" className="py-24 bg-[#070B13] relative overflow-hidden">
       {/* Background decoration */}
@@ -9,7 +13,7 @@ export function AboutSection() {
           {/* Quote */}
           <div>
             <div className="text-primary font-heading text-3xl md:text-4xl font-bold leading-tight border-l-4 border-primary pl-8 mb-8">
-              "Мы создаем цифровые продукты с той же надежностью, с которой ремонтируем автомобили"
+              {content.title || 'О компании MaxiSoftZab'}
             </div>
             
             {/* Stats */}
@@ -31,10 +35,8 @@ export function AboutSection() {
 
           {/* Text */}
           <div className="space-y-6 font-body text-muted-foreground">
-            <p>
-              <strong className="text-white">MaxiSoftZAB</strong> — это IT-подразделение компании{" "}
-              <strong className="text-white">«ДДМАКСИ СТРОЙРЕМСЕРВИС»</strong>, которая уже много лет 
-              специализируется на техническом обслуживании и ремонте автотранспортных средств.
+            <p className="whitespace-pre-line">
+              {content.description || 'MaxiSoftZab — это команда профессионалов, объединяющая экспертизу в разработке программного обеспечения и обслуживании автотранспорта.'}
             </p>
 
             <div className="bg-primary/10 border-l-4 border-primary p-6 rounded-sm">

@@ -1,6 +1,9 @@
 import { Button } from "@/components/ui/button"
+import { useContent } from "@/hooks/useContent"
 
 export const Hero3DWebGL = () => {
+  const { content } = useContent('hero')
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#070B13] to-[#0F1419] relative overflow-hidden">
       {/* Animated grid background */}
@@ -27,14 +30,14 @@ export const Hero3DWebGL = () => {
         <div className="max-w-4xl">
           <h1 className="font-heading text-5xl md:text-7xl font-bold mb-6 leading-tight">
             <span className="bg-gradient-to-r from-white to-secondary bg-clip-text text-transparent">
-              Цифровые решения
+              {content.title || 'Цифровые решения'}
             </span>
             <br />
-            <span className="text-primary">для вашего бизнеса</span>
+            <span className="text-primary">{content.subtitle || 'для вашего бизнеса'}</span>
           </h1>
           
           <p className="text-muted-foreground text-lg md:text-xl mb-10 max-w-2xl leading-relaxed font-body">
-            Мы создаем производительные веб-приложения, сайты и мобильные приложения с той же точностью и надежностью, с которой обслуживаем автотранспорт.
+            {content.description || 'Мы создаем производительные веб-приложения, сайты и мобильные приложения с той же точностью и надежностью, с которой обслуживаем автотранспорт.'}
           </p>
           
           <div className="flex flex-wrap gap-5">
@@ -43,7 +46,7 @@ export const Hero3DWebGL = () => {
               size="lg"
               onClick={() => document.getElementById('process')?.scrollIntoView({ behavior: 'smooth' })}
             >
-              Смотреть наши работы
+              {content.button1 || 'Смотреть наши работы'}
             </Button>
             <Button 
               variant="outline" 
@@ -51,7 +54,7 @@ export const Hero3DWebGL = () => {
               size="lg"
               onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
             >
-              Рассчитать стоимость
+              {content.button2 || 'Рассчитать стоимость'}
             </Button>
           </div>
         </div>

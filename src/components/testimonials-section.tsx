@@ -1,5 +1,14 @@
+import { useState } from 'react'
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { useNavigate } from 'react-router-dom'
 
 const portfolioItems = [
   {
@@ -21,6 +30,9 @@ const portfolioItems = [
 ]
 
 export function TestimonialsSection() {
+  const [showDialog, setShowDialog] = useState(false)
+  const navigate = useNavigate()
+
   return (
     <section id="portfolio" className="py-24 bg-[#070B13] relative">
       {/* Background decoration */}
@@ -70,15 +82,34 @@ export function TestimonialsSection() {
           <Button 
             variant="outline" 
             className="border-2 border-secondary hover:bg-secondary/10 hover:border-primary hover:text-primary transition-all duration-300 font-heading px-8 py-6"
-            onClick={() => {
-              const portfolioSection = document.getElementById('portfolio');
-              portfolioSection?.scrollIntoView({ behavior: 'smooth' });
-            }}
+            onClick={() => setShowDialog(true)}
           >
             Показать все проекты
           </Button>
         </div>
       </div>
+
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="text-white font-heading text-2xl">Просмотр всех проектов</DialogTitle>
+            <DialogDescription className="text-secondary">
+              Для просмотра всех проектов необходимо пройти регистрацию.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end mt-4">
+            <Button 
+              onClick={() => {
+                setShowDialog(false)
+                navigate('/register')
+              }}
+              className="bg-primary hover:bg-primary/90 text-white font-heading"
+            >
+              Регистрация
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   )
 }

@@ -65,15 +65,6 @@ export function TestimonialsSection() {
             </Card>
           ))}
         </div>
-
-        <div className="text-center">
-          <Button 
-            variant="outline" 
-            className="border-2 border-secondary hover:bg-secondary/10 hover:border-primary hover:text-primary transition-all duration-300 font-heading px-8 py-6"
-          >
-            Показать все проекты
-          </Button>
-        </div>
       </div>
     </section>
   )

@@ -17,6 +17,9 @@ interface SiteSettings {
   social_telegram: string;
   social_vk: string;
   social_youtube: string;
+  company_legal_name: string;
+  company_inn: string;
+  company_ogrn: string;
   maintenance_mode: boolean;
   registration_enabled: boolean;
 }
@@ -31,6 +34,9 @@ const DEFAULT_SETTINGS: SiteSettings = {
   social_telegram: "",
   social_vk: "",
   social_youtube: "",
+  company_legal_name: "",
+  company_inn: "",
+  company_ogrn: "",
   maintenance_mode: false,
   registration_enabled: true,
 };
@@ -102,6 +108,31 @@ const SETTING_GROUPS = [
         label: "YouTube",
         type: "text",
         placeholder: "https://youtube.com/@your_channel",
+      },
+    ],
+  },
+  {
+    id: "requisites",
+    name: "Реквизиты",
+    icon: "Building2",
+    fields: [
+      {
+        key: "company_legal_name",
+        label: "Название юридического лица",
+        type: "text",
+        placeholder: 'ООО «ДДМАКСИ СТРОЙРЕМСЕРВИС»',
+      },
+      {
+        key: "company_inn",
+        label: "ИНН",
+        type: "text",
+        placeholder: "1234567890",
+      },
+      {
+        key: "company_ogrn",
+        label: "ОГРН",
+        type: "text",
+        placeholder: "1234567890123",
       },
     ],
   },

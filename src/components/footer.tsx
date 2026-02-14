@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom"
 import Icon from "@/components/ui/icon"
 import { useContent } from "@/hooks/useContent"
 
@@ -47,6 +48,11 @@ export function Footer() {
                 <a href="#about" className="text-muted-foreground hover:text-primary transition-colors font-body text-sm">
                   О нас
                 </a>
+              </li>
+              <li>
+                <Link to="/requisites" className="text-muted-foreground hover:text-primary transition-colors font-body text-sm">
+                  Реквизиты
+                </Link>
               </li>
             </ul>
           </div>

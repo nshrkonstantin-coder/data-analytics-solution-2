@@ -37,6 +37,11 @@ const defaultContent: Record<string, Record<string, string>> = {
     description: 'Разработка программного обеспечения и обслуживание автотранспорта в Забайкалье',
     copyright: '© 2025 MaxiSoftZab. Все права защищены.',
   },
+  settings: {
+    company_legal_name: '',
+    company_inn: '',
+    company_ogrn: '',
+  },
   images: {
     logo: '',
     hero_bg: '',

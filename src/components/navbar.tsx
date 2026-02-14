@@ -72,6 +72,12 @@ export function Navbar() {
             >
               Контакты
             </a>
+            <Link
+              to="/requisites"
+              className="font-body text-muted-foreground hover:text-primary transition-colors duration-200 font-medium relative after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-[2px] after:bg-primary after:transition-all hover:after:w-full"
+            >
+              Реквизиты
+            </Link>
           </div>
 
           {/* Auth Buttons */}
@@ -147,6 +153,13 @@ export function Navbar() {
               >
                 Контакты
               </a>
+              <Link
+                to="/requisites"
+                className="block px-3 py-2 font-body text-white hover:text-primary transition-colors duration-200"
+                onClick={() => setIsOpen(false)}
+              >
+                Реквизиты
+              </Link>
               <div className="px-3 py-2 space-y-2">
                 <PwaInstallButton variant="mobile" />
                 {isAuthenticated ? (

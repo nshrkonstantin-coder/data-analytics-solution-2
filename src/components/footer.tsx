@@ -4,7 +4,7 @@ import { useContent } from "@/hooks/useContent"
 
 export function Footer() {
   const { content: footerContent } = useContent('footer')
-  const { content: contactContent } = useContent('contact')
+  const { content: contactContent, loading: contactLoading } = useContent('contact')
 
   return (
     <footer id="contact" className="bg-[#070B13] border-t border-primary/10 pt-20 pb-8">
@@ -94,15 +94,15 @@ export function Footer() {
             <ul className="space-y-4">
               <li className="flex items-start gap-3 text-muted-foreground font-body text-sm">
                 <Icon name="Mail" size={16} className="text-primary mt-1 flex-shrink-0" />
-                <span>{contactContent.email || 'info@maxisoftzab.ru'}</span>
+                <span>{contactLoading ? '...' : contactContent.email}</span>
               </li>
               <li className="flex items-start gap-3 text-muted-foreground font-body text-sm">
                 <Icon name="Phone" size={16} className="text-primary mt-1 flex-shrink-0" />
-                <span>{contactContent.phone || '+7 (999) 123-45-67'}</span>
+                <span>{contactLoading ? '...' : contactContent.phone}</span>
               </li>
               <li className="flex items-start gap-3 text-muted-foreground font-body text-sm">
                 <Icon name="MapPin" size={16} className="text-primary mt-1 flex-shrink-0" />
-                <span>{contactContent.address || 'г. Чита, ул. Примерная, д. 1'}</span>
+                <span>{contactLoading ? '...' : contactContent.address}</span>
               </li>
               <li className="flex items-start gap-3 text-muted-foreground font-body text-sm">
                 <Icon name="Car" size={16} className="text-primary mt-1 flex-shrink-0" />

@@ -16,6 +16,7 @@ import { AdminUsersPage } from "./pages/admin-users";
 import { AdminProductsPage } from "./pages/admin-products";
 import { AdminContentPage } from "./pages/admin-content";
 import { AdminOrdersPage } from "./pages/admin-orders";
+import { AdminSettingsPage } from "./pages/admin-settings";
 import { PwaInstallBanner } from "./components/pwa-install-banner";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/admin/products" element={<AdminProductsPage />} />
           <Route path="/admin/content" element={<AdminContentPage />} />
           <Route path="/admin/orders" element={<AdminOrdersPage />} />
+          <Route path="/admin/settings" element={<AdminSettingsPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

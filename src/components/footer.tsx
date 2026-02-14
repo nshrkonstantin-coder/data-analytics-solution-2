@@ -74,11 +74,6 @@ export function Footer() {
                 </a>
               </li>
               <li>
-                <a href="#services" className="text-muted-foreground hover:text-primary transition-colors font-body text-sm">
-                  Мобильные приложения
-                </a>
-              </li>
-              <li>
                 <a href="#contact" className="text-muted-foreground hover:text-primary transition-colors font-body text-sm">
                   Техническая поддержка
                 </a>

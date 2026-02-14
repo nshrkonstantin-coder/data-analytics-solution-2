@@ -25,17 +25,6 @@ const features = [
       "Корпоративные порталы"
     ]
   },
-  {
-    title: "Мобильные приложения",
-    description: "Приложения для iOS и Android, кроссплатформенные решения, бизнес-приложения и утилиты.",
-    icon: "Smartphone",
-    features: [
-      "Приложения для iOS и Android",
-      "Кроссплатформенные решения",
-      "Бизнес-приложения и утилиты",
-      "Приложения для клиентов"
-    ]
-  },
 ]
 
 export function FeaturesSection() {
@@ -53,7 +42,7 @@ export function FeaturesSection() {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {features.map((feature, index) => (
             <Card
               key={index}

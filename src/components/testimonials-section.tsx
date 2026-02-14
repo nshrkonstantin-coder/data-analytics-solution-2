@@ -18,11 +18,6 @@ const portfolioItems = [
     large: true
   },
   {
-    category: "Мобильное приложение",
-    name: "Приложение для автосервиса ServiceConnect",
-    tech: "Flutter / Firebase"
-  },
-  {
     category: "Корпоративный сайт",
     name: "Портал для логистической компании",
     tech: "Vue.js / Laravel"

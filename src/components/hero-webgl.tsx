@@ -37,7 +37,7 @@ export const Hero3DWebGL = () => {
           </h1>
           
           <p className="text-muted-foreground text-lg md:text-xl mb-10 max-w-2xl leading-relaxed font-body">
-            {content.description || 'Мы создаем производительные веб-приложения, сайты и мобильные приложения с той же точностью и надежностью, с которой обслуживаем автотранспорт.'}
+            {content.description || 'Мы создаем производительные веб-приложения и корпоративные сайты с той же точностью и надежностью, с которой обслуживаем автотранспорт.'}
           </p>
           
           <div className="flex flex-wrap gap-5">

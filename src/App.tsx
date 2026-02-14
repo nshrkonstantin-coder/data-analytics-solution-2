@@ -16,6 +16,7 @@ import { AdminUsersPage } from "./pages/admin-users";
 import { AdminProductsPage } from "./pages/admin-products";
 import { AdminContentPage } from "./pages/admin-content";
 import { AdminOrdersPage } from "./pages/admin-orders";
+import { PwaInstallBanner } from "./components/pwa-install-banner";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ const App = () => (
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
+      <PwaInstallBanner />
     </TooltipProvider>
   </QueryClientProvider>
 );

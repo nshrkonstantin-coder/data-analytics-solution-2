@@ -55,12 +55,6 @@ export function Navbar() {
               Портфолио
             </a>
             <a 
-              href="#process" 
-              className="font-body text-muted-foreground hover:text-primary transition-colors duration-200 font-medium relative after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-[2px] after:bg-primary after:transition-all hover:after:w-full"
-            >
-              Процесс
-            </a>
-            <a 
               href="#about" 
               className="font-body text-muted-foreground hover:text-primary transition-colors duration-200 font-medium relative after:absolute after:bottom-[-5px] after:left-0 after:w-0 after:h-[2px] after:bg-primary after:transition-all hover:after:w-full"
             >
@@ -131,13 +125,6 @@ export function Navbar() {
                 onClick={() => setIsOpen(false)}
               >
                 Портфолио
-              </a>
-              <a
-                href="#process"
-                className="block px-3 py-2 font-body text-white hover:text-primary transition-colors duration-200"
-                onClick={() => setIsOpen(false)}
-              >
-                Процесс
               </a>
               <a
                 href="#about"

@@ -1,0 +1,30 @@
+{
+  "name": "MAXISOFTZAB — IT-решения",
+  "short_name": "MAXISOFTZAB",
+  "description": "IT-подразделение компании ДДМАКСИ СТРОЙРЕМСЕРВИС. Веб-приложения, корпоративные сайты и мобильные приложения.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#070B13",
+  "theme_color": "#3B82F6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://cdn.poehali.dev/projects/00d2380e-72d5-4a6b-94bb-b8acad2b3b21/files/cb7a36ed-f690-44ed-8c05-d018d5215649.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "https://cdn.poehali.dev/projects/00d2380e-72d5-4a6b-94bb-b8acad2b3b21/files/cb7a36ed-f690-44ed-8c05-d018d5215649.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "https://cdn.poehali.dev/projects/00d2380e-72d5-4a6b-94bb-b8acad2b3b21/files/cb7a36ed-f690-44ed-8c05-d018d5215649.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "maskable"
+    }
+  ]
+}

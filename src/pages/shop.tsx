@@ -21,6 +21,7 @@ export function ShopPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -127,7 +128,8 @@ export function ShopPage() {
               {products.map((product) => (
                 <div
                   key={product.id}
-                  className="bg-card/50 backdrop-blur-xl border border-primary/20 rounded-2xl overflow-hidden hover:border-primary/40 transition-all duration-300 hover:-translate-y-2 group"
+                  className="bg-card/50 backdrop-blur-xl border border-primary/20 rounded-2xl overflow-hidden hover:border-primary/40 transition-all duration-300 hover:-translate-y-2 group cursor-pointer"
+                  onClick={() => setSelectedProduct(product)}
                 >
                   <div className="relative h-48 overflow-hidden">
                     <img
@@ -158,7 +160,7 @@ export function ShopPage() {
                         </div>
                       </div>
                       <Button
-                        onClick={() => handleBuy(product.id)}
+                        onClick={(e) => { e.stopPropagation(); handleBuy(product.id) }}
                         className="bg-gradient-to-r from-primary to-[#FF8E53] hover:shadow-lg hover:shadow-primary/30"
                       >
                         <Icon name="ShoppingCart" size={18} className="mr-2" />
@@ -172,6 +174,79 @@ export function ShopPage() {
           )}
         </div>
       </div>
+
+      {/* Модальное окно продукта */}
+      {selectedProduct && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+          onClick={() => setSelectedProduct(null)}
+        >
+          <div
+            className="bg-[#0F1419] border border-primary/30 rounded-2xl overflow-hidden max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl shadow-primary/10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {selectedProduct.image_url && (
+              <div className="relative h-72 overflow-hidden">
+                <img
+                  src={selectedProduct.image_url}
+                  alt={selectedProduct.title}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0F1419] to-transparent" />
+                <div className="absolute top-4 right-4 bg-primary/90 backdrop-blur-sm px-3 py-1 rounded-full">
+                  <span className="text-white font-heading font-bold text-sm">
+                    {selectedProduct.category}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setSelectedProduct(null)}
+                  className="absolute top-4 left-4 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-colors"
+                >
+                  <Icon name="X" size={18} />
+                </button>
+              </div>
+            )}
+
+            <div className="p-8">
+              {!selectedProduct.image_url && (
+                <div className="flex justify-end mb-4">
+                  <button
+                    onClick={() => setSelectedProduct(null)}
+                    className="text-muted-foreground hover:text-white transition-colors"
+                  >
+                    <Icon name="X" size={22} />
+                  </button>
+                </div>
+              )}
+
+              <h2 className="font-heading text-3xl font-bold text-white mb-4">
+                {selectedProduct.title}
+              </h2>
+
+              <p className="text-muted-foreground text-base leading-relaxed mb-8 whitespace-pre-line">
+                {selectedProduct.description}
+              </p>
+
+              <div className="flex items-center justify-between pt-6 border-t border-primary/20">
+                <div>
+                  <div className="text-sm text-muted-foreground mb-1">Стоимость</div>
+                  <div className="font-heading text-4xl font-bold text-primary">
+                    {selectedProduct.price.toLocaleString('ru-RU')} ₽
+                  </div>
+                </div>
+                <Button
+                  onClick={() => { setSelectedProduct(null); handleBuy(selectedProduct.id) }}
+                  size="lg"
+                  className="bg-gradient-to-r from-primary to-[#FF8E53] hover:shadow-lg hover:shadow-primary/30 text-lg px-8"
+                >
+                  <Icon name="ShoppingCart" size={20} className="mr-2" />
+                  Купить
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -6,6 +6,7 @@ import Icon from '@/components/ui/icon'
 import { authService } from '@/lib/auth'
 
 const ADMIN_API_URL = 'https://functions.poehali.dev/60c925e5-07c4-4e22-acbb-7c60c1d9524d'
+const UPLOAD_API_URL = 'https://functions.poehali.dev/0dcbc7f5-3b22-4665-a98a-18fb4e1124d2'
 
 interface Content {
   id: number
@@ -130,6 +131,17 @@ export function AdminContentPage() {
         const token = localStorage.getItem('auth_token')
 
         try {
+          const uploadResponse = await fetch(UPLOAD_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image_data: base64, image_name: file.name }),
+          })
+          const uploadData = await uploadResponse.json()
+          if (!uploadResponse.ok) {
+            throw new Error(uploadData.error || 'Ошибка загрузки в хранилище')
+          }
+          const imageUrl = uploadData.url
+
           const response = await fetch(`${ADMIN_API_URL}?action=content`, {
             method: 'POST',
             headers: {
@@ -139,7 +151,7 @@ export function AdminContentPage() {
             body: JSON.stringify({
               section: selectedSection.id,
               key: fieldKey,
-              content: base64,
+              content: imageUrl,
               content_type: 'image',
             }),
           })
@@ -147,11 +159,11 @@ export function AdminContentPage() {
           const data = await response.json()
 
           if (!response.ok) {
-            throw new Error(data.error || 'Ошибка загрузки изображения')
+            throw new Error(data.error || 'Ошибка сохранения изображения')
           }
 
           setSuccess(`Изображение "${selectedSection.fields.find(f => f.key === fieldKey)?.label}" загружено`)
-          setFormData({ ...formData, [fieldKey]: base64 })
+          setFormData({ ...formData, [fieldKey]: imageUrl })
           await loadContent()
           setTimeout(() => setSuccess(''), 3000)
         } catch (err) {

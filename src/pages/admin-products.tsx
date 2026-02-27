@@ -7,6 +7,12 @@ import { authService } from '@/lib/auth'
 
 const ADMIN_API_URL = 'https://functions.poehali.dev/60c925e5-07c4-4e22-acbb-7c60c1d9524d'
 
+interface Upgrade {
+  title: string
+  description: string
+  price: number
+}
+
 interface Product {
   id: number
   title: string
@@ -15,6 +21,10 @@ interface Product {
   category: string
   image_url: string
   is_active: boolean
+  website_url: string
+  subscription_days: number
+  upgrades: Upgrade[]
+  is_subscription: boolean
   created_at: string
 }
 
@@ -31,7 +41,11 @@ export function AdminProductsPage() {
     category: '',
     image_url: '',
     is_active: true,
+    website_url: '',
+    subscription_days: '30',
+    is_subscription: true,
   })
+  const [upgrades, setUpgrades] = useState<Upgrade[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -53,9 +67,7 @@ export function AdminProductsPage() {
     const token = localStorage.getItem('auth_token')
     try {
       const response = await fetch(`${ADMIN_API_URL}?action=products`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: { 'Authorization': `Bearer ${token}` },
       })
       const data = await response.json()
       setProducts(data.products || [])
@@ -73,9 +85,13 @@ export function AdminProductsPage() {
       description: product.description,
       price: product.price.toString(),
       category: product.category,
-      image_url: product.image_url,
+      image_url: product.image_url || '',
       is_active: product.is_active,
+      website_url: product.website_url || '',
+      subscription_days: (product.subscription_days || 30).toString(),
+      is_subscription: product.is_subscription !== false,
     })
+    setUpgrades(product.upgrades || [])
     setEditMode(true)
     setError('')
     setSuccess('')
@@ -90,10 +106,28 @@ export function AdminProductsPage() {
       category: '',
       image_url: '',
       is_active: true,
+      website_url: '',
+      subscription_days: '30',
+      is_subscription: true,
     })
+    setUpgrades([])
     setEditMode(true)
     setError('')
     setSuccess('')
+  }
+
+  const addUpgrade = () => {
+    setUpgrades([...upgrades, { title: '', description: '', price: 0 }])
+  }
+
+  const removeUpgrade = (index: number) => {
+    setUpgrades(upgrades.filter((_, i) => i !== index))
+  }
+
+  const updateUpgrade = (index: number, field: keyof Upgrade, value: string | number) => {
+    const updated = [...upgrades]
+    updated[index] = { ...updated[index], [field]: value }
+    setUpgrades(updated)
   }
 
   const handleSave = async () => {
@@ -107,15 +141,15 @@ export function AdminProductsPage() {
     const token = localStorage.getItem('auth_token')
 
     try {
-      const url = editingProduct 
-        ? `${ADMIN_API_URL}?action=product`
-        : `${ADMIN_API_URL}?action=product`
-      
-      const body = editingProduct
-        ? { id: editingProduct.id, ...formData, price: parseFloat(formData.price) }
-        : { ...formData, price: parseFloat(formData.price) }
+      const body = {
+        ...(editingProduct ? { id: editingProduct.id } : {}),
+        ...formData,
+        price: parseFloat(formData.price),
+        subscription_days: parseInt(formData.subscription_days) || 30,
+        upgrades,
+      }
 
-      const response = await fetch(url, {
+      const response = await fetch(`${ADMIN_API_URL}?action=product`, {
         method: editingProduct ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -209,11 +243,9 @@ export function AdminProductsPage() {
                 </div>
               )}
 
-              <div className="space-y-4">
+              <div className="space-y-5">
                 <div>
-                  <label className="block text-sm font-medium text-white mb-2">
-                    Название *
-                  </label>
+                  <label className="block text-sm font-medium text-white mb-2">Название *</label>
                   <Input
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -223,9 +255,7 @@ export function AdminProductsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-white mb-2">
-                    Описание
-                  </label>
+                  <label className="block text-sm font-medium text-white mb-2">Описание</label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -235,11 +265,9 @@ export function AdminProductsPage() {
                   />
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-white mb-2">
-                      Цена (₽) *
-                    </label>
+                    <label className="block text-sm font-medium text-white mb-2">Цена (₽) *</label>
                     <Input
                       type="number"
                       value={formData.price}
@@ -250,9 +278,7 @@ export function AdminProductsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-white mb-2">
-                      Категория *
-                    </label>
+                    <label className="block text-sm font-medium text-white mb-2">Категория *</label>
                     <Input
                       value={formData.category}
                       onChange={(e) => setFormData({ ...formData, category: e.target.value })}
@@ -260,12 +286,21 @@ export function AdminProductsPage() {
                       className="bg-background/50 border-primary/30 focus:border-primary"
                     />
                   </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">Срок подписки (дней)</label>
+                    <Input
+                      type="number"
+                      value={formData.subscription_days}
+                      onChange={(e) => setFormData({ ...formData, subscription_days: e.target.value })}
+                      placeholder="30"
+                      className="bg-background/50 border-primary/30 focus:border-primary"
+                    />
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-white mb-2">
-                    URL изображения
-                  </label>
+                  <label className="block text-sm font-medium text-white mb-2">URL изображения</label>
                   <Input
                     value={formData.image_url}
                     onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
@@ -274,17 +309,98 @@ export function AdminProductsPage() {
                   />
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    id="is_active"
-                    checked={formData.is_active}
-                    onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                    className="w-4 h-4 rounded border-primary/30"
-                  />
-                  <label htmlFor="is_active" className="text-sm text-white">
-                    Активен (показывать в магазине)
+                <div className="border border-primary/20 rounded-xl p-5 bg-primary/5">
+                  <label className="block text-sm font-medium text-primary mb-2 flex items-center gap-2">
+                    <Icon name="Globe" size={16} />
+                    Ссылка на сайт (для доступа после оплаты)
                   </label>
+                  <Input
+                    value={formData.website_url}
+                    onChange={(e) => setFormData({ ...formData, website_url: e.target.value })}
+                    placeholder="https://client-site.ru или https://app.example.com"
+                    className="bg-background/50 border-primary/30 focus:border-primary"
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">
+                    После подтверждения оплаты пользователь получит ссылку на этот сайт. На сайте должна быть кнопка "Подтвердить оплату".
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.is_active}
+                      onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                      className="w-4 h-4 rounded border-primary/30"
+                    />
+                    <span className="text-sm text-white">Активен (показывать в магазине)</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.is_subscription}
+                      onChange={(e) => setFormData({ ...formData, is_subscription: e.target.checked })}
+                      className="w-4 h-4 rounded border-primary/30"
+                    />
+                    <span className="text-sm text-white">Подписка (периодическая оплата)</span>
+                  </label>
+                </div>
+
+                <div className="border border-primary/20 rounded-xl p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-white font-medium">Варианты улучшений</h3>
+                      <p className="text-xs text-muted-foreground mt-1">Дополнительные опции для клиента после покупки</p>
+                    </div>
+                    <Button
+                      onClick={addUpgrade}
+                      variant="outline"
+                      size="sm"
+                      className="border-primary/30 hover:bg-primary/10"
+                    >
+                      <Icon name="Plus" size={14} className="mr-1" />
+                      Добавить
+                    </Button>
+                  </div>
+
+                  {upgrades.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-3">Нет улучшений</p>
+                  )}
+
+                  <div className="space-y-3">
+                    {upgrades.map((upgrade, index) => (
+                      <div key={index} className="bg-background/30 rounded-lg p-4 flex gap-3">
+                        <div className="flex-1 grid md:grid-cols-3 gap-3">
+                          <Input
+                            value={upgrade.title}
+                            onChange={(e) => updateUpgrade(index, 'title', e.target.value)}
+                            placeholder="Название улучшения"
+                            className="bg-background/50 border-primary/30 focus:border-primary text-sm"
+                          />
+                          <Input
+                            value={upgrade.description}
+                            onChange={(e) => updateUpgrade(index, 'description', e.target.value)}
+                            placeholder="Описание"
+                            className="bg-background/50 border-primary/30 focus:border-primary text-sm"
+                          />
+                          <Input
+                            type="number"
+                            value={upgrade.price}
+                            onChange={(e) => updateUpgrade(index, 'price', parseFloat(e.target.value) || 0)}
+                            placeholder="Цена (₽)"
+                            className="bg-background/50 border-primary/30 focus:border-primary text-sm"
+                          />
+                        </div>
+                        <button
+                          onClick={() => removeUpgrade(index)}
+                          className="text-red-400 hover:text-red-300 mt-2"
+                        >
+                          <Icon name="X" size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="flex gap-3 pt-4">
@@ -320,36 +436,64 @@ export function AdminProductsPage() {
                 key={product.id}
                 className="bg-card/50 backdrop-blur-xl border border-primary/20 rounded-2xl overflow-hidden hover:border-primary/40 transition-all duration-300"
               >
-                <div className="relative h-48 overflow-hidden">
-                  <img
-                    src={product.image_url}
-                    alt={product.title}
-                    className="w-full h-full object-cover"
-                  />
+                <div className="relative h-40 overflow-hidden">
+                  {product.image_url ? (
+                    <img
+                      src={product.image_url}
+                      alt={product.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-primary/10 flex items-center justify-center">
+                      <Icon name="Globe" size={40} className="text-primary/40" />
+                    </div>
+                  )}
                   <div className="absolute top-3 right-3 flex gap-2">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      product.is_active 
-                        ? 'bg-green-500/90 text-white' 
+                      product.is_active
+                        ? 'bg-green-500/90 text-white'
                         : 'bg-red-500/90 text-white'
                     }`}>
                       {product.is_active ? 'Активен' : 'Неактивен'}
                     </span>
+                    {product.is_subscription && (
+                      <span className="px-3 py-1 rounded-full text-xs font-medium bg-primary/90 text-white">
+                        Подписка
+                      </span>
+                    )}
                   </div>
                 </div>
-                
+
                 <div className="p-6">
-                  <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-start justify-between mb-1">
                     <h3 className="font-heading text-xl font-bold text-white flex-1">
                       {product.title}
                     </h3>
                   </div>
-                  
-                  <p className="text-sm text-primary mb-3">{product.category}</p>
-                  
-                  <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
-                    {product.description}
-                  </p>
-                  
+
+                  <p className="text-sm text-primary mb-2">{product.category}</p>
+                  <p className="text-muted-foreground text-sm mb-3 line-clamp-2">{product.description}</p>
+
+                  {product.website_url && (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3 bg-background/30 rounded-lg px-3 py-2">
+                      <Icon name="Globe" size={12} className="text-primary flex-shrink-0" />
+                      <span className="truncate">{product.website_url}</span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground mb-4">
+                    <span className="flex items-center gap-1">
+                      <Icon name="Calendar" size={12} />
+                      {product.subscription_days || 30} дней
+                    </span>
+                    {product.upgrades && product.upgrades.length > 0 && (
+                      <span className="flex items-center gap-1">
+                        <Icon name="Zap" size={12} />
+                        {product.upgrades.length} улучш.
+                      </span>
+                    )}
+                  </div>
+
                   <div className="flex items-center justify-between pt-4 border-t border-primary/20">
                     <div className="font-heading text-2xl font-bold text-primary">
                       {product.price.toLocaleString('ru-RU')} ₽
@@ -373,7 +517,7 @@ export function AdminProductsPage() {
             <div className="bg-card/50 backdrop-blur-xl border border-primary/20 rounded-2xl p-12 text-center">
               <Icon name="Package" size={64} className="text-muted-foreground mx-auto mb-4" />
               <h3 className="font-heading text-xl font-bold text-white mb-2">
-                Продуктов пока нет
+                Продуктов нет
               </h3>
               <p className="text-muted-foreground mb-4">
                 Создайте первый продукт для магазина

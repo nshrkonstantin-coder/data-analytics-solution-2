@@ -4,10 +4,22 @@ import { Button } from '@/components/ui/button'
 import Icon from '@/components/ui/icon'
 import { authService, User } from '@/lib/auth'
 
+const ORDERS_API_URL = 'https://functions.poehali.dev/039e26de-4ba3-422f-a486-d3c175ff2b2b'
+
+interface ActiveSubscription {
+  id: number
+  product_title: string
+  expires_at: string | null
+  days_left: number | null
+  subscription_status: string
+  website_url: string
+}
+
 export function DashboardPage() {
   const navigate = useNavigate()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [subscriptions, setSubscriptions] = useState<ActiveSubscription[]>([])
 
   useEffect(() => {
     const verifyUser = async () => {
@@ -16,12 +28,29 @@ export function DashboardPage() {
         navigate('/login')
       } else {
         setUser(result.user || null)
+        await loadSubscriptions()
       }
       setLoading(false)
     }
 
     verifyUser()
   }, [navigate])
+
+  const loadSubscriptions = async () => {
+    const token = localStorage.getItem('auth_token')
+    try {
+      const res = await fetch(`${ORDERS_API_URL}?action=my-orders`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      })
+      const data = await res.json()
+      const active = (data.orders || []).filter(
+        (o: ActiveSubscription) => o.subscription_status === 'active' || o.subscription_status === 'expired'
+      )
+      setSubscriptions(active.slice(0, 3))
+    } catch {
+      // ignore
+    }
+  }
 
   const handleLogout = async () => {
     await authService.logout()
@@ -64,6 +93,61 @@ export function DashboardPage() {
               Личный кабинет пользователя
             </p>
           </div>
+
+          {subscriptions.length > 0 && (
+            <div className="mb-6 space-y-3">
+              {subscriptions.map((sub) => {
+                const isExpired = sub.subscription_status === 'expired'
+                const isExpiringSoon = !isExpired && sub.days_left !== null && sub.days_left <= 3
+                return (
+                  <div
+                    key={sub.id}
+                    className={`bg-card/50 backdrop-blur-xl border rounded-xl p-4 flex items-center justify-between gap-4 ${
+                      isExpired
+                        ? 'border-red-500/30'
+                        : isExpiringSoon
+                        ? 'border-yellow-500/30'
+                        : 'border-green-500/20'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                        isExpired ? 'bg-red-500/10' : isExpiringSoon ? 'bg-yellow-500/10' : 'bg-green-500/10'
+                      }`}>
+                        <Icon
+                          name={isExpired ? 'XCircle' : isExpiringSoon ? 'AlertTriangle' : 'Globe'}
+                          size={16}
+                          className={isExpired ? 'text-red-400' : isExpiringSoon ? 'text-yellow-400' : 'text-green-400'}
+                        />
+                      </div>
+                      <div>
+                        <p className="text-white text-sm font-medium">{sub.product_title}</p>
+                        <p className={`text-xs ${isExpired ? 'text-red-400' : isExpiringSoon ? 'text-yellow-400' : 'text-muted-foreground'}`}>
+                          {isExpired
+                            ? 'Подписка истекла'
+                            : sub.days_left !== null
+                            ? `Осталось ${sub.days_left} дн.`
+                            : 'Активна'}
+                        </p>
+                      </div>
+                    </div>
+                    <Link
+                      to="/dashboard/orders"
+                      className={`text-xs px-3 py-1.5 rounded-lg border flex-shrink-0 ${
+                        isExpired
+                          ? 'border-red-500/30 text-red-400 hover:bg-red-500/10'
+                          : isExpiringSoon
+                          ? 'border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10'
+                          : 'border-green-500/30 text-green-400 hover:bg-green-500/10'
+                      } transition-colors`}
+                    >
+                      {isExpired || isExpiringSoon ? 'Продлить' : 'Открыть'}
+                    </Link>
+                  </div>
+                )
+              })}
+            </div>
+          )}
 
           <div className="grid md:grid-cols-2 gap-6">
             <Link
@@ -129,12 +213,12 @@ export function DashboardPage() {
                   <Icon name="Package" size={24} className="text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-heading text-xl font-bold text-white">Мои заказы</h3>
-                  <p className="text-sm text-muted-foreground">История покупок</p>
+                  <h3 className="font-heading text-xl font-bold text-white">Мои подписки</h3>
+                  <p className="text-sm text-muted-foreground">Заказы и доступ к сайтам</p>
                 </div>
               </div>
               <p className="text-sm text-muted-foreground">
-                Просмотр статуса и истории заказов
+                Управление подписками, подтверждение оплаты, продление
               </p>
             </Link>
           </div>

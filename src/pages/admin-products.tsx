@@ -6,6 +6,7 @@ import Icon from '@/components/ui/icon'
 import { authService } from '@/lib/auth'
 
 const ADMIN_API_URL = 'https://functions.poehali.dev/60c925e5-07c4-4e22-acbb-7c60c1d9524d'
+const UPLOAD_API_URL = 'https://functions.poehali.dev/0dcbc7f5-3b22-4665-a98a-18fb4e1124d2'
 
 interface Upgrade {
   title: string
@@ -47,6 +48,7 @@ export function AdminProductsPage() {
   })
   const [upgrades, setUpgrades] = useState<Upgrade[]>([])
   const [saving, setSaving] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
@@ -62,6 +64,35 @@ export function AdminProductsPage() {
 
     verifyAdmin()
   }, [navigate])
+
+  const handleImageUpload = async (file: File) => {
+    setUploadingImage(true)
+    setError('')
+    try {
+      const reader = new FileReader()
+      reader.onloadend = async () => {
+        const base64 = reader.result as string
+        try {
+          const response = await fetch(UPLOAD_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image_data: base64, image_name: file.name }),
+          })
+          const data = await response.json()
+          if (!response.ok) throw new Error(data.error || 'Ошибка загрузки')
+          setFormData(prev => ({ ...prev, image_url: data.url }))
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Ошибка загрузки изображения')
+        } finally {
+          setUploadingImage(false)
+        }
+      }
+      reader.readAsDataURL(file)
+    } catch {
+      setError('Ошибка чтения файла')
+      setUploadingImage(false)
+    }
+  }
 
   const loadProducts = async () => {
     const token = localStorage.getItem('auth_token')
@@ -300,13 +331,36 @@ export function AdminProductsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-white mb-2">URL изображения</label>
-                  <Input
-                    value={formData.image_url}
-                    onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                    placeholder="https://example.com/image.jpg"
-                    className="bg-background/50 border-primary/30 focus:border-primary"
-                  />
+                  <label className="block text-sm font-medium text-white mb-2">Изображение</label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={formData.image_url}
+                      onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                      placeholder="https://example.com/image.jpg"
+                      className="bg-background/50 border-primary/30 focus:border-primary"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="shrink-0 border-primary/30"
+                      disabled={uploadingImage}
+                      onClick={() => {
+                        const input = document.createElement('input')
+                        input.type = 'file'
+                        input.accept = 'image/*'
+                        input.onchange = (e) => {
+                          const file = (e.target as HTMLInputElement).files?.[0]
+                          if (file) handleImageUpload(file)
+                        }
+                        input.click()
+                      }}
+                    >
+                      {uploadingImage ? <Icon name="Loader2" size={16} className="animate-spin" /> : <Icon name="Upload" size={16} />}
+                    </Button>
+                  </div>
+                  {formData.image_url && (
+                    <img src={formData.image_url} alt="preview" className="mt-2 h-20 rounded-lg object-cover" />
+                  )}
                 </div>
 
                 <div className="border border-primary/20 rounded-xl p-5 bg-primary/5">

@@ -232,7 +232,7 @@ export function ShopPage() {
                 <div className="mb-6 p-4 rounded-xl border border-secondary/30 bg-secondary/5 flex items-center justify-between gap-4">
                   <div>
                     <div className="text-sm font-medium text-white mb-1">Хочешь попробовать перед покупкой?</div>
-                    <div className="text-xs text-muted-foreground">Демо-доступ — без сохранения данных</div>
+                    <div className="text-xs text-muted-foreground">Полный доступ ко всем страницам и блокам — можно заполнять формы, кликать, исследовать. Данные не сохраняются, административные разделы недоступны.</div>
                   </div>
                   <Button
                     variant="outline"

@@ -52,7 +52,7 @@ def get_products_list(conn) -> dict:
     cursor = conn.cursor(cursor_factory=RealDictCursor)
     
     cursor.execute("""
-        SELECT id, title, description, price, category, image_url, is_active, created_at
+        SELECT id, title, description, price, category, image_url, demo_url, is_active, created_at
         FROM products
         WHERE is_active = true
         ORDER BY created_at DESC
@@ -76,7 +76,7 @@ def get_product_detail(conn, product_id: str) -> dict:
     cursor = conn.cursor(cursor_factory=RealDictCursor)
     
     cursor.execute("""
-        SELECT id, title, description, price, category, image_url, is_active, created_at
+        SELECT id, title, description, price, category, image_url, demo_url, is_active, created_at
         FROM products
         WHERE id = %s AND is_active = true
     """, (product_id,))

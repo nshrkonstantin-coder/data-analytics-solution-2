@@ -23,6 +23,7 @@ interface Product {
   image_url: string
   is_active: boolean
   website_url: string
+  demo_url: string
   subscription_days: number
   upgrades: Upgrade[]
   is_subscription: boolean
@@ -43,6 +44,7 @@ export function AdminProductsPage() {
     image_url: '',
     is_active: true,
     website_url: '',
+    demo_url: '',
     subscription_days: '30',
     is_subscription: true,
   })
@@ -119,6 +121,7 @@ export function AdminProductsPage() {
       image_url: product.image_url || '',
       is_active: product.is_active,
       website_url: product.website_url || '',
+      demo_url: product.demo_url || '',
       subscription_days: (product.subscription_days || 30).toString(),
       is_subscription: product.is_subscription !== false,
     })
@@ -138,6 +141,7 @@ export function AdminProductsPage() {
       image_url: '',
       is_active: true,
       website_url: '',
+      demo_url: '',
       subscription_days: '30',
       is_subscription: true,
     })
@@ -376,6 +380,22 @@ export function AdminProductsPage() {
                   />
                   <p className="text-xs text-muted-foreground mt-2">
                     После подтверждения оплаты пользователь получит ссылку на этот сайт. На сайте должна быть кнопка "Подтвердить оплату".
+                  </p>
+                </div>
+
+                <div className="border border-secondary/20 rounded-xl p-5 bg-secondary/5">
+                  <label className="block text-sm font-medium text-secondary mb-2 flex items-center gap-2">
+                    <Icon name="MonitorPlay" size={16} />
+                    Ссылка на демо
+                  </label>
+                  <Input
+                    value={formData.demo_url}
+                    onChange={(e) => setFormData({ ...formData, demo_url: e.target.value })}
+                    placeholder="https://demo.example.com"
+                    className="bg-background/50 border-secondary/30 focus:border-secondary"
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Ссылка на демо-версию — покупатель сможет потрогать продукт до покупки.
                   </p>
                 </div>
 

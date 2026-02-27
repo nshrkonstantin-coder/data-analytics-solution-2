@@ -1,0 +1,1 @@
+ALTER TABLE t_p13776910_data_analytics_solut.products ADD COLUMN IF NOT EXISTS demo_url TEXT DEFAULT '';

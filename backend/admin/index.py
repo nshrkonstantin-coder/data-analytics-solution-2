@@ -207,8 +207,8 @@ def create_product(conn, body: dict) -> dict:
     cursor = conn.cursor()
     cursor.execute("""
         INSERT INTO products (title, description, price, category, image_url, is_active,
-                              website_url, subscription_days, upgrades, is_subscription)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                              website_url, demo_url, subscription_days, upgrades, is_subscription)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """, (
         body.get('title'),
         body.get('description'),
@@ -217,6 +217,7 @@ def create_product(conn, body: dict) -> dict:
         body.get('image_url'),
         body.get('is_active', True),
         body.get('website_url', ''),
+        body.get('demo_url', ''),
         body.get('subscription_days', 30),
         jsonlib.dumps(upgrades),
         body.get('is_subscription', True)
@@ -247,7 +248,7 @@ def update_product(conn, body: dict) -> dict:
     cursor.execute("""
         UPDATE products 
         SET title = %s, description = %s, price = %s, category = %s, 
-            image_url = %s, is_active = %s, website_url = %s,
+            image_url = %s, is_active = %s, website_url = %s, demo_url = %s,
             subscription_days = %s, upgrades = %s, is_subscription = %s,
             updated_at = NOW()
         WHERE id = %s
@@ -259,6 +260,7 @@ def update_product(conn, body: dict) -> dict:
         body.get('image_url'),
         body.get('is_active'),
         body.get('website_url', ''),
+        body.get('demo_url', ''),
         body.get('subscription_days', 30),
         jsonlib.dumps(upgrades),
         body.get('is_subscription', True),

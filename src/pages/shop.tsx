@@ -13,6 +13,7 @@ interface Product {
   price: number
   category: string
   image_url: string
+  demo_url: string
   created_at: string
 }
 
@@ -226,6 +227,23 @@ export function ShopPage() {
               <p className="text-muted-foreground text-base leading-relaxed mb-8 whitespace-pre-line">
                 {selectedProduct.description}
               </p>
+
+              {selectedProduct.demo_url && (
+                <div className="mb-6 p-4 rounded-xl border border-secondary/30 bg-secondary/5 flex items-center justify-between gap-4">
+                  <div>
+                    <div className="text-sm font-medium text-white mb-1">Хочешь попробовать перед покупкой?</div>
+                    <div className="text-xs text-muted-foreground">Демо-доступ — без сохранения данных</div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="shrink-0 border-secondary/50 text-secondary hover:bg-secondary/10"
+                    onClick={() => window.open(selectedProduct.demo_url, '_blank')}
+                  >
+                    <Icon name="MonitorPlay" size={16} className="mr-2" />
+                    Демо
+                  </Button>
+                </div>
+              )}
 
               <div className="flex items-center justify-between pt-6 border-t border-primary/20">
                 <div>

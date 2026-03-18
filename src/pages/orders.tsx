@@ -48,6 +48,7 @@ interface Order {
 }
 
 type Tab = 'my-orders' | 'buy'
+type PaymentMethod = 'card' | 'requisites' | null
 
 export function OrdersPage() {
   const navigate = useNavigate()
@@ -65,6 +66,14 @@ export function OrdersPage() {
   const [success, setSuccess] = useState('')
   const [createdOrderId, setCreatedOrderId] = useState<number | null>(null)
   const [confirmResult, setConfirmResult] = useState<{ status: string; message: string; website_url?: string; expires_at?: string } | null>(null)
+
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null)
+  const [cardNumber, setCardNumber] = useState('')
+  const [cardExpiry, setCardExpiry] = useState('')
+  const [cardCvc, setCardCvc] = useState('')
+  const [cardName, setCardName] = useState('')
+  const [cardPaying, setCardPaying] = useState(false)
+  const [cardSuccess, setCardSuccess] = useState(false)
 
   useEffect(() => {
     const init = async () => {
@@ -178,6 +187,45 @@ export function OrdersPage() {
     } finally {
       setConfirming(false)
     }
+  }
+
+  const handleCardPayment = async () => {
+    if (!selectedProduct) return
+    if (!cardNumber || !cardExpiry || !cardCvc || !cardName) {
+      setError('Пожалуйста, заполните все поля карты')
+      return
+    }
+    setCardPaying(true)
+    setError('')
+    const token = localStorage.getItem('auth_token')
+    try {
+      const res = await fetch(`${ORDERS_API_URL}?action=create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ product_id: selectedProduct.id, payment_method: 'card' }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Ошибка создания заказа')
+      await new Promise(r => setTimeout(r, 1500))
+      setCreatedOrderId(data.order_id)
+      setCardSuccess(true)
+      await loadMyOrders()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ошибка оплаты')
+    } finally {
+      setCardPaying(false)
+    }
+  }
+
+  const formatCardNumber = (val: string) => {
+    const digits = val.replace(/\D/g, '').slice(0, 16)
+    return digits.replace(/(.{4})/g, '$1 ').trim()
+  }
+
+  const formatExpiry = (val: string) => {
+    const digits = val.replace(/\D/g, '').slice(0, 4)
+    if (digits.length >= 3) return digits.slice(0, 2) + '/' + digits.slice(2)
+    return digits
   }
 
   const handleRenew = async (orderId: number) => {
@@ -535,77 +583,200 @@ export function OrdersPage() {
                     </div>
                   </div>
 
+                  {/* Выбор способа оплаты */}
                   <div className="bg-card/50 backdrop-blur-xl border border-primary/20 rounded-2xl p-6">
                     <h3 className="text-white font-medium mb-4 flex items-center gap-2">
-                      <Icon name="CreditCard" size={18} className="text-primary" />
-                      Как оплатить
+                      <Icon name="Wallet" size={18} className="text-primary" />
+                      Способ оплаты
                     </h3>
-                    <ol className="space-y-3 text-sm">
-                      <li className="flex items-start gap-3">
-                        <span className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center flex-shrink-0 mt-0.5 font-bold">1</span>
-                        <span className="text-muted-foreground">Нажмите кнопку "Создать заказ" — система зарегистрирует вашу покупку</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <span className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center flex-shrink-0 mt-0.5 font-bold">2</span>
-                        <span className="text-muted-foreground">Переведите оплату по реквизитам, которые появятся ниже</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <span className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center flex-shrink-0 mt-0.5 font-bold">3</span>
-                        <span className="text-muted-foreground">После зачисления средств менеджер подтвердит оплату (обычно в течение 1 рабочего дня)</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <span className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center flex-shrink-0 mt-0.5 font-bold">4</span>
-                        <span className="text-muted-foreground">Нажмите "Подтвердить оплату" в разделе "Мои подписки" — система откроет доступ к сайту</span>
-                      </li>
-                    </ol>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      <button
+                        onClick={() => { setPaymentMethod('card'); setError(''); setCardSuccess(false) }}
+                        className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left ${paymentMethod === 'card' ? 'border-primary bg-primary/10' : 'border-primary/20 hover:border-primary/40 bg-background/20'}`}
+                      >
+                        <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
+                          <Icon name="CreditCard" size={20} className="text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-white font-medium text-sm">Банковская карта</p>
+                          <p className="text-muted-foreground text-xs mt-0.5">Любой банк, мгновенно</p>
+                        </div>
+                        {paymentMethod === 'card' && <Icon name="CheckCircle" size={18} className="text-primary ml-auto" />}
+                      </button>
+                      <button
+                        onClick={() => { setPaymentMethod('requisites'); setError('') }}
+                        className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left ${paymentMethod === 'requisites' ? 'border-primary bg-primary/10' : 'border-primary/20 hover:border-primary/40 bg-background/20'}`}
+                      >
+                        <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
+                          <Icon name="Building2" size={20} className="text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-white font-medium text-sm">От организации</p>
+                          <p className="text-muted-foreground text-xs mt-0.5">По реквизитам компании</p>
+                        </div>
+                        {paymentMethod === 'requisites' && <Icon name="CheckCircle" size={18} className="text-primary ml-auto" />}
+                      </button>
+                    </div>
                   </div>
 
-                  {createdOrderId ? (
+                  {/* Форма оплаты картой */}
+                  {paymentMethod === 'card' && !cardSuccess && (
                     <div className="bg-card/50 backdrop-blur-xl border border-primary/20 rounded-2xl p-6">
-                      <h3 className="text-white font-medium mb-4 flex items-center gap-2">
-                        <Icon name="Banknote" size={18} className="text-primary" />
-                        Реквизиты для оплаты (Заказ №{createdOrderId})
-                      </h3>
-                      <Link
-                        to="/requisites"
-                        className="inline-flex items-center gap-2 px-4 py-2 border border-primary/30 rounded-lg text-primary text-sm hover:bg-primary/10 transition-colors mb-4"
-                        target="_blank"
-                      >
-                        <Icon name="ExternalLink" size={14} />
-                        Открыть реквизиты компании
-                      </Link>
-                      <p className="text-muted-foreground text-sm">
-                        В назначении платежа укажите: <strong className="text-white">Заказ №{createdOrderId}</strong>
-                      </p>
-                      <div className="mt-4 flex gap-3">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-white font-medium flex items-center gap-2">
+                          <Icon name="CreditCard" size={18} className="text-primary" />
+                          Данные карты
+                        </h3>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 px-2 py-0.5 rounded-full">Тестовый режим</span>
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-muted-foreground text-xs mb-1.5 block">Номер карты</label>
+                          <input
+                            type="text"
+                            placeholder="0000 0000 0000 0000"
+                            value={cardNumber}
+                            onChange={e => setCardNumber(formatCardNumber(e.target.value))}
+                            maxLength={19}
+                            className="w-full bg-background/50 border border-primary/20 rounded-lg px-4 py-3 text-white placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/60 transition-colors font-mono text-sm"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-muted-foreground text-xs mb-1.5 block">Срок действия</label>
+                            <input
+                              type="text"
+                              placeholder="ММ/ГГ"
+                              value={cardExpiry}
+                              onChange={e => setCardExpiry(formatExpiry(e.target.value))}
+                              maxLength={5}
+                              className="w-full bg-background/50 border border-primary/20 rounded-lg px-4 py-3 text-white placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/60 transition-colors font-mono text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-muted-foreground text-xs mb-1.5 block">CVC/CVV</label>
+                            <input
+                              type="password"
+                              placeholder="•••"
+                              value={cardCvc}
+                              onChange={e => setCardCvc(e.target.value.replace(/\D/g, '').slice(0, 3))}
+                              maxLength={3}
+                              className="w-full bg-background/50 border border-primary/20 rounded-lg px-4 py-3 text-white placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/60 transition-colors font-mono text-sm"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-muted-foreground text-xs mb-1.5 block">Имя держателя карты</label>
+                          <input
+                            type="text"
+                            placeholder="IVAN IVANOV"
+                            value={cardName}
+                            onChange={e => setCardName(e.target.value.toUpperCase())}
+                            className="w-full bg-background/50 border border-primary/20 rounded-lg px-4 py-3 text-white placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/60 transition-colors font-mono text-sm"
+                          />
+                        </div>
                         <Button
-                          onClick={() => { setTab('my-orders'); setSuccess('') }}
-                          className="bg-gradient-to-r from-primary to-[#FF8E53]"
+                          onClick={handleCardPayment}
+                          disabled={cardPaying}
+                          className="w-full bg-gradient-to-r from-primary to-[#FF8E53] hover:shadow-lg hover:shadow-primary/30 h-12 text-base font-medium mt-2"
                         >
-                          <Icon name="Package" size={16} className="mr-2" />
-                          Перейти к моим заказам
+                          {cardPaying ? (
+                            <><Icon name="Loader2" size={18} className="animate-spin mr-2" />Обрабатываем оплату...</>
+                          ) : (
+                            <><Icon name="Lock" size={18} className="mr-2" />Оплатить {selectedProduct.price.toLocaleString('ru-RU')} ₽</>
+                          )}
                         </Button>
+                        <p className="text-muted-foreground text-xs text-center flex items-center justify-center gap-1">
+                          <Icon name="Shield" size={12} />
+                          Тестовый режим — реальное списание не производится
+                        </p>
                       </div>
                     </div>
-                  ) : (
-                    <Button
-                      onClick={handleCreateOrder}
-                      disabled={creating}
-                      className="w-full bg-gradient-to-r from-primary to-[#FF8E53] hover:shadow-lg hover:shadow-primary/30 h-14 text-lg font-medium"
-                    >
-                      {creating ? (
-                        <>
-                          <Icon name="Loader2" size={20} className="animate-spin mr-2" />
-                          Создаём заказ...
-                        </>
-                      ) : (
-                        <>
-                          <Icon name="ShoppingCart" size={20} className="mr-2" />
-                          Создать заказ на {selectedProduct.price.toLocaleString('ru-RU')} ₽
-                        </>
-                      )}
-                    </Button>
                   )}
+
+                  {/* Успех оплаты картой */}
+                  {paymentMethod === 'card' && cardSuccess && createdOrderId && (
+                    <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-6 text-center">
+                      <Icon name="CheckCircle" size={48} className="text-green-400 mx-auto mb-3" />
+                      <h3 className="text-white font-heading text-xl font-bold mb-2">Оплата принята!</h3>
+                      <p className="text-muted-foreground text-sm mb-4">Заказ №{createdOrderId} зарегистрирован. Менеджер подтвердит доступ в течение 1 рабочего дня.</p>
+                      <Button
+                        onClick={() => { setTab('my-orders'); setCardSuccess(false) }}
+                        className="bg-gradient-to-r from-primary to-[#FF8E53]"
+                      >
+                        <Icon name="Package" size={16} className="mr-2" />
+                        Перейти к моим заказам
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Оплата по реквизитам */}
+                  {paymentMethod === 'requisites' && (
+                    <div className="space-y-4">
+                      <div className="bg-card/50 backdrop-blur-xl border border-primary/20 rounded-2xl p-6">
+                        <h3 className="text-white font-medium mb-4 flex items-center gap-2">
+                          <Icon name="Banknote" size={18} className="text-primary" />
+                          Реквизиты для оплаты
+                        </h3>
+                        <div className="space-y-2 text-sm">
+                          {[
+                            { label: 'Получатель', value: 'ООО «ДДМАКСИ СТРОЙРЕМСЕРВИС»' },
+                            { label: 'ИНН / КПП', value: '7500009357 / 750001001' },
+                            { label: 'Расчётный счёт', value: '40702810074000010251' },
+                            { label: 'Корр. счёт', value: '30101810500000000637' },
+                            { label: 'БИК', value: '047601637' },
+                            { label: 'Банк', value: 'ПАО Сбербанк, г. Чита' },
+                          ].map(r => (
+                            <div key={r.label} className="flex items-start justify-between gap-4 py-2 border-b border-primary/10 last:border-0">
+                              <span className="text-muted-foreground flex-shrink-0">{r.label}</span>
+                              <span className="text-white font-mono text-right">{r.value}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <Link
+                          to="/requisites"
+                          target="_blank"
+                          className="inline-flex items-center gap-2 mt-4 text-primary text-sm hover:underline"
+                        >
+                          <Icon name="ExternalLink" size={14} />
+                          Полная карточка предприятия
+                        </Link>
+                      </div>
+
+                      <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-4">
+                        <p className="text-yellow-400 text-sm flex items-start gap-2">
+                          <Icon name="Info" size={15} className="flex-shrink-0 mt-0.5" />
+                          После создания заказа укажите его номер в назначении платежа. Доступ откроется после подтверждения менеджером (до 1 раб. дня).
+                        </p>
+                      </div>
+
+                      {createdOrderId ? (
+                        <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-5">
+                          <p className="text-green-400 font-medium mb-1">Заказ №{createdOrderId} создан</p>
+                          <p className="text-muted-foreground text-sm mb-4">В назначении платежа укажите: <strong className="text-white">Оплата по Заказу №{createdOrderId}</strong></p>
+                          <Button onClick={() => { setTab('my-orders'); setSuccess('') }} className="bg-gradient-to-r from-primary to-[#FF8E53]">
+                            <Icon name="Package" size={16} className="mr-2" />
+                            Перейти к моим заказам
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          onClick={handleCreateOrder}
+                          disabled={creating}
+                          className="w-full bg-gradient-to-r from-primary to-[#FF8E53] hover:shadow-lg hover:shadow-primary/30 h-14 text-lg font-medium"
+                        >
+                          {creating ? (
+                            <><Icon name="Loader2" size={20} className="animate-spin mr-2" />Создаём заказ...</>
+                          ) : (
+                            <><Icon name="ShoppingCart" size={20} className="mr-2" />Создать заказ на {selectedProduct.price.toLocaleString('ru-RU')} ₽</>
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                  )}
+
                 </div>
               )}
             </div>

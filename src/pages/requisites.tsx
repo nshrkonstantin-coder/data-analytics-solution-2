@@ -1,30 +1,24 @@
 import { Link } from "react-router-dom";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
-import { useContent } from "@/hooks/useContent";
 import Icon from "@/components/ui/icon";
 
+const REQUISITES = [
+  { label: "Полное наименование", value: "Общество с ограниченной ответственностью «ДДМАКСИ СТРОЙРЕМСЕРВИС»", icon: "Building2" },
+  { label: "Сокращённое наименование", value: "ООО «ДДМАКСИ СТРОЙРЕМСЕРВИС»", icon: "Building" },
+  { label: "Юридический / Почтовый адрес", value: "673634, Забайкальский край, м. о. Газимуро-Заводский, п. Новоширокинский, д. 3, помещ. 10", icon: "MapPin" },
+  { label: "Телефон", value: "+7-985-506-08-14", icon: "Phone" },
+  { label: "ИНН / КПП", value: "7500009357 / 750001001", icon: "FileText" },
+  { label: "ОГРН", value: "1237500001705", icon: "Hash" },
+  { label: "Расчётный счёт", value: "40702810074000010251", icon: "CreditCard" },
+  { label: "Корреспондентский счёт", value: "30101810500000000637", icon: "Landmark" },
+  { label: "БИК банка", value: "047601637", icon: "Barcode" },
+  { label: "Банк", value: "ПАО Сбербанк, г. Чита", icon: "Banknote" },
+  { label: "Генеральный директор", value: "Шнюков Константин Анатольевич", icon: "User" },
+  { label: "E-mail", value: "ddmaxi-srs@yandex.ru", icon: "Mail" },
+];
+
 export function RequisitesPage() {
-  const { content: settings, loading } = useContent("settings");
-
-  const requisites = [
-    {
-      label: "Наименование юридического лица",
-      value: settings.company_legal_name,
-      icon: "Building2",
-    },
-    {
-      label: "ИНН",
-      value: settings.company_inn,
-      icon: "FileText",
-    },
-    {
-      label: "ОГРН",
-      value: settings.company_ogrn,
-      icon: "Hash",
-    },
-  ];
-
   return (
     <div className="min-h-screen bg-[#0F1419]">
       <Navbar />
@@ -47,34 +41,31 @@ export function RequisitesPage() {
               Юридическая информация для оформления договоров и оплаты
             </p>
 
-            {loading ? (
-              <div className="flex items-center justify-center py-20">
-                <Icon name="Loader2" size={40} className="text-primary animate-spin" />
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {requisites.map((item) => (
-                  <div
-                    key={item.label}
-                    className="bg-card/50 backdrop-blur-xl border border-primary/20 rounded-2xl p-6 hover:border-primary/30 transition-all"
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <Icon name={item.icon} size={22} className="text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground font-body text-sm mb-1">
-                          {item.label}
-                        </p>
-                        <p className="text-white font-heading text-xl font-bold">
-                          {item.value || "—"}
-                        </p>
-                      </div>
+            <div className="space-y-3">
+              {REQUISITES.map((item) => (
+                <div
+                  key={item.label}
+                  className="bg-card/50 backdrop-blur-xl border border-primary/20 rounded-2xl p-5 hover:border-primary/40 transition-all"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Icon name={item.icon} size={20} className="text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground font-body text-xs mb-1">{item.label}</p>
+                      <p className="text-white font-heading text-lg font-bold">{item.value}</p>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-8 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-5">
+              <p className="text-yellow-400 text-sm flex items-start gap-2">
+                <Icon name="Info" size={16} className="flex-shrink-0 mt-0.5" />
+                В назначении платежа обязательно укажите номер вашего заказа, например: <strong>«Оплата по Заказу №123»</strong>
+              </p>
+            </div>
           </div>
         </div>
       </div>

@@ -5,6 +5,7 @@ import Icon from '@/components/ui/icon'
 import { authService, User } from '@/lib/auth'
 
 const ORDERS_API_URL = 'https://functions.poehali.dev/039e26de-4ba3-422f-a486-d3c175ff2b2b'
+const WALLET_API_URL = 'https://functions.poehali.dev/e00e6aa9-1a59-4dd1-9630-1960a065f4ee'
 
 interface ActiveSubscription {
   id: number
@@ -20,6 +21,7 @@ export function DashboardPage() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [subscriptions, setSubscriptions] = useState<ActiveSubscription[]>([])
+  const [walletBalance, setWalletBalance] = useState<number | null>(null)
 
   useEffect(() => {
     const verifyUser = async () => {
@@ -28,7 +30,7 @@ export function DashboardPage() {
         navigate('/login')
       } else {
         setUser(result.user || null)
-        await loadSubscriptions()
+        await Promise.all([loadSubscriptions(), loadWallet()])
       }
       setLoading(false)
     }
@@ -49,6 +51,19 @@ export function DashboardPage() {
       setSubscriptions(active.slice(0, 3))
     } catch {
       // ignore
+    }
+  }
+
+  const loadWallet = async () => {
+    const token = localStorage.getItem('auth_token')
+    try {
+      const res = await fetch(`${WALLET_API_URL}?action=balance`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = await res.json()
+      if (data.wallet) setWalletBalance(Number(data.wallet.balance))
+    } catch (_e) {
+      void _e
     }
   }
 
@@ -196,7 +211,11 @@ export function DashboardPage() {
                 </div>
                 <div>
                   <h3 className="font-heading text-xl font-bold text-white">Кошелек</h3>
-                  <p className="text-sm text-muted-foreground">Баланс: 0.00 ₽</p>
+                  <p className="text-sm text-muted-foreground">
+                    Баланс: {walletBalance !== null
+                      ? `${walletBalance.toLocaleString('ru-RU', { minimumFractionDigits: 2 })} ₽`
+                      : '0.00 ₽'}
+                  </p>
                 </div>
               </div>
               <p className="text-sm text-muted-foreground">

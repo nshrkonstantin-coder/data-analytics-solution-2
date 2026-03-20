@@ -54,6 +54,11 @@ export function Footer() {
                   Реквизиты
                 </Link>
               </li>
+              <li>
+                <Link to="/privacy" className="text-muted-foreground hover:text-primary transition-colors font-body text-sm">
+                  Политика конфиденциальности
+                </Link>
+              </li>
             </ul>
           </div>
 

@@ -21,6 +21,7 @@ import { RequisitesPage } from "./pages/requisites";
 import { OrdersPage } from "./pages/orders";
 import { SiteAccessPage } from "./pages/site-access";
 import { WalletPage } from "./pages/wallet";
+import { PrivacyPage } from "./pages/privacy";
 import { PwaInstallBanner } from "./components/pwa-install-banner";
 
 const queryClient = new QueryClient();
@@ -48,6 +49,7 @@ const App = () => (
           <Route path="/dashboard/orders" element={<OrdersPage />} />
           <Route path="/dashboard/wallet" element={<WalletPage />} />
           <Route path="/site-access/:orderId" element={<SiteAccessPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

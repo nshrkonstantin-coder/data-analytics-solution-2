@@ -186,7 +186,15 @@ export function RegisterPage() {
                 )}
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed select-none">
-                {consentText}
+                {consentText}{' '}
+                <Link
+                  to="/privacy"
+                  target="_blank"
+                  className="text-primary hover:underline"
+                  onClick={e => e.stopPropagation()}
+                >
+                  Подробнее
+                </Link>
               </p>
             </div>
 

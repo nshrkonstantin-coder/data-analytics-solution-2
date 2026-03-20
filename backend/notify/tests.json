@@ -1,0 +1,36 @@
+{
+  "tests": [
+    {
+      "name": "OPTIONS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Unknown event type",
+      "method": "POST",
+      "path": "/",
+      "body": {"type": "unknown"},
+      "expectedStatus": 400,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Notify order paid (no SMTP configured — should not crash)",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "type": "order_paid",
+        "order_id": 1,
+        "product_title": "Test Product",
+        "amount": 1000,
+        "user_name": "Test User",
+        "user_email": "test@example.com",
+        "payment_method": "wallet"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {"ok": true},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

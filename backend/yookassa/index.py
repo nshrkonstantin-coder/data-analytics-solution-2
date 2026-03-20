@@ -7,6 +7,25 @@ import urllib.request
 import base64
 
 SCHEMA = 't_p13776910_data_analytics_solut'
+NOTIFY_URL = 'https://functions.poehali.dev/9812cd97-edcd-4540-858b-96ce682d8f82'
+
+
+def send_order_notification(order_id, product_title, amount, user_name, user_email, payment_method):
+    try:
+        payload = json.dumps({
+            'type': 'order_paid',
+            'order_id': order_id,
+            'product_title': product_title,
+            'amount': amount,
+            'user_name': user_name,
+            'user_email': user_email,
+            'payment_method': payment_method,
+        }).encode('utf-8')
+        req = urllib.request.Request(NOTIFY_URL, data=payload, method='POST')
+        req.add_header('Content-Type', 'application/json')
+        urllib.request.urlopen(req, timeout=5)
+    except Exception:
+        pass
 
 
 def yookassa_request(method: str, path: str, body: dict = None) -> dict:
@@ -28,7 +47,7 @@ def yookassa_request(method: str, path: str, body: dict = None) -> dict:
 
 
 def handler(event: dict, context) -> dict:
-    """API для оплаты через ЮКасса: создание платежа и обработка webhook"""
+    """API для оплаты через ЮКасса: пополнение баланса, прямая покупка товара и обработка webhook"""
     method = event.get('httpMethod', 'GET')
 
     if method == 'OPTIONS':
@@ -78,6 +97,10 @@ def handler(event: dict, context) -> dict:
         body = json.loads(event.get('body', '{}'))
         return create_payment(conn, cursor, user, body)
 
+    if method == 'POST' and action == 'buy-with-card':
+        body = json.loads(event.get('body', '{}'))
+        return buy_product_with_card(conn, cursor, user, body)
+
     if method == 'GET' and action == 'status':
         params = event.get('queryStringParameters') or {}
         return check_status(conn, cursor, user['id'], params.get('payment_id', ''))
@@ -88,7 +111,7 @@ def handler(event: dict, context) -> dict:
 
 
 def create_payment(conn, cursor, user: dict, body: dict) -> dict:
-    """Создаёт платёж в ЮКасса и сохраняет в БД"""
+    """Создаёт платёж в ЮКасса для пополнения баланса кошелька"""
     amount = float(body.get('amount', 0))
     return_url = body.get('return_url', 'https://poehali.dev')
 
@@ -111,7 +134,11 @@ def create_payment(conn, cursor, user: dict, body: dict) -> dict:
         'confirmation': {'type': 'redirect', 'return_url': return_url},
         'capture': True,
         'description': description,
-        'metadata': {'user_id': user['id'], 'wallet_id': wallet['id']}
+        'metadata': {
+            'type': 'topup',
+            'user_id': user['id'],
+            'wallet_id': wallet['id']
+        }
     })
 
     payment_id = payment['id']
@@ -134,6 +161,84 @@ def create_payment(conn, cursor, user: dict, body: dict) -> dict:
     }
 
 
+def buy_product_with_card(conn, cursor, user: dict, body: dict) -> dict:
+    """Создаёт заказ и платёж ЮКасса для прямой оплаты товара картой"""
+    product_id = body.get('product_id')
+    return_url = body.get('return_url', 'https://poehali.dev')
+
+    cursor.execute(f"""
+        SELECT id, title, price, subscription_days, website_url, is_subscription
+        FROM {SCHEMA}.products WHERE id = %s AND is_active = TRUE
+    """, (product_id,))
+    product = cursor.fetchone()
+
+    if not product:
+        cursor.close()
+        conn.close()
+        return _err(404, 'Продукт не найден')
+
+    cursor.execute(f"""
+        SELECT id FROM {SCHEMA}.orders
+        WHERE user_id = %s AND product_id = %s AND payment_confirmed = TRUE AND expires_at > NOW()
+        LIMIT 1
+    """, (user['id'], product_id))
+    if cursor.fetchone():
+        cursor.close()
+        conn.close()
+        return _err(400, 'У вас уже есть активная подписка на этот продукт')
+
+    amount = float(product['price'])
+    description = f'Покупка: {product["title"]} — {user["full_name"] or user["email"]}'
+
+    # Создаём заказ со статусом pending (активируется при webhook)
+    cursor.execute(f"""
+        INSERT INTO {SCHEMA}.orders
+            (user_id, product_id, total_amount, status, payment_reference, notes)
+        VALUES (%s, %s, %s, 'pending', 'card', 'Ожидание оплаты картой через ЮКасса')
+        RETURNING id
+    """, (user['id'], product_id, amount))
+    order = cursor.fetchone()
+    order_id = order['id']
+
+    payment = yookassa_request('POST', '/payments', {
+        'amount': {'value': f'{amount:.2f}', 'currency': 'RUB'},
+        'confirmation': {'type': 'redirect', 'return_url': return_url},
+        'capture': True,
+        'description': description,
+        'metadata': {
+            'type': 'product',
+            'user_id': user['id'],
+            'order_id': order_id,
+            'product_id': product_id
+        }
+    })
+
+    payment_id = payment['id']
+    confirmation_url = payment['confirmation']['confirmation_url']
+
+    # Сохраняем платёж, wallet_id=NULL для продуктовых платежей
+    cursor.execute(f"""
+        INSERT INTO {SCHEMA}.yookassa_payments
+            (user_id, wallet_id, payment_id, amount, status, description, confirmation_url)
+        VALUES (%s, NULL, %s, %s, 'pending', %s, %s)
+    """, (user['id'], payment_id, amount, description, confirmation_url))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return {
+        'statusCode': 200,
+        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+        'body': json.dumps({
+            'payment_id': payment_id,
+            'confirmation_url': confirmation_url,
+            'order_id': order_id
+        }),
+        'isBase64Encoded': False
+    }
+
+
 def check_status(conn, cursor, user_id: int, payment_id: str) -> dict:
     """Проверяет статус платежа"""
     if not payment_id:
@@ -142,28 +247,54 @@ def check_status(conn, cursor, user_id: int, payment_id: str) -> dict:
         return _err(400, 'Укажите payment_id')
 
     cursor.execute(f"""
-        SELECT id, status, amount FROM {SCHEMA}.yookassa_payments
-        WHERE payment_id = %s AND user_id = %s
+        SELECT yp.id, yp.status, yp.amount, yp.description,
+               o.id as order_id, o.payment_confirmed, o.access_token, o.expires_at,
+               p.website_url
+        FROM {SCHEMA}.yookassa_payments yp
+        LEFT JOIN {SCHEMA}.orders o ON (yp.user_id = o.user_id AND yp.description LIKE '%' || p.title || '%')
+        LEFT JOIN {SCHEMA}.products p ON o.product_id = p.id
+        WHERE yp.payment_id = %s AND yp.user_id = %s
     """, (payment_id, user_id))
     row = cursor.fetchone()
 
     if not row:
+        # fallback: просто статус платежа
+        cursor.execute(f"""
+            SELECT id, status, amount FROM {SCHEMA}.yookassa_payments
+            WHERE payment_id = %s AND user_id = %s
+        """, (payment_id, user_id))
+        row = cursor.fetchone()
         cursor.close()
         conn.close()
-        return _err(404, 'Платёж не найден')
+        if not row:
+            return _err(404, 'Платёж не найден')
+        return {
+            'statusCode': 200,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'status': row['status'], 'amount': float(row['amount'])}),
+            'isBase64Encoded': False
+        }
 
     cursor.close()
     conn.close()
     return {
         'statusCode': 200,
         'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-        'body': json.dumps({'status': row['status'], 'amount': float(row['amount'])}),
+        'body': json.dumps({
+            'status': row['status'],
+            'amount': float(row['amount']),
+            'order_id': row.get('order_id'),
+            'payment_confirmed': row.get('payment_confirmed'),
+            'access_token': row.get('access_token'),
+            'website_url': row.get('website_url'),
+            'expires_at': str(row['expires_at']) if row.get('expires_at') else None,
+        }, default=str),
         'isBase64Encoded': False
     }
 
 
 def handle_webhook(event: dict) -> dict:
-    """Обрабатывает уведомление от ЮКасса о смене статуса платежа"""
+    """Обрабатывает уведомление от ЮКасса: пополняет кошелёк или активирует заказ"""
     try:
         body = json.loads(event.get('body', '{}'))
     except Exception:
@@ -179,6 +310,9 @@ def handle_webhook(event: dict) -> dict:
 
     payment_obj = body.get('object', {})
     payment_id = payment_obj.get('id')
+    metadata = payment_obj.get('metadata', {})
+    payment_type = metadata.get('type', 'topup')
+
     if not payment_id:
         return _err(400, 'No payment id')
 
@@ -186,7 +320,7 @@ def handle_webhook(event: dict) -> dict:
     cursor = conn.cursor(cursor_factory=RealDictCursor)
 
     cursor.execute(f"""
-        SELECT id, wallet_id, amount, status FROM {SCHEMA}.yookassa_payments
+        SELECT id, wallet_id, user_id, amount, status FROM {SCHEMA}.yookassa_payments
         WHERE payment_id = %s
     """, (payment_id,))
     payment_row = cursor.fetchone()
@@ -202,18 +336,10 @@ def handle_webhook(event: dict) -> dict:
         }
 
     amount = float(payment_row['amount'])
-    wallet_id = payment_row['wallet_id']
+    user_id = payment_row['user_id']
 
-    cursor.execute(f"""
-        UPDATE {SCHEMA}.wallets
-        SET balance = balance + %s, updated_at = NOW()
-        WHERE id = %s
-    """, (amount, wallet_id))
-
-    cursor.execute(f"""
-        INSERT INTO {SCHEMA}.wallet_transactions (wallet_id, amount, type, description)
-        VALUES (%s, %s, 'credit', %s)
-    """, (wallet_id, amount, f'Пополнение через ЮКасса (платёж {payment_id[:8]}...)'))
+    cursor.execute(f"SELECT email, full_name FROM {SCHEMA}.users WHERE id = %s", (user_id,))
+    user_row = cursor.fetchone()
 
     cursor.execute(f"""
         UPDATE {SCHEMA}.yookassa_payments
@@ -221,9 +347,70 @@ def handle_webhook(event: dict) -> dict:
         WHERE payment_id = %s
     """, (payment_id,))
 
-    conn.commit()
-    cursor.close()
-    conn.close()
+    if payment_type == 'product':
+        # Активируем заказ
+        order_id = metadata.get('order_id')
+        product_id = metadata.get('product_id')
+
+        cursor.execute(f"""
+            SELECT id, title, subscription_days, website_url
+            FROM {SCHEMA}.products WHERE id = %s
+        """, (product_id,))
+        product = cursor.fetchone()
+
+        access_token = secrets.token_urlsafe(32)
+        from datetime import datetime, timedelta
+        expires_at = None
+        if product and product['subscription_days']:
+            expires_at = datetime.now() + timedelta(days=int(product['subscription_days']))
+
+        cursor.execute(f"""
+            UPDATE {SCHEMA}.orders
+            SET status = 'paid', payment_confirmed = TRUE, paid_at = NOW(),
+                expires_at = %s, access_token = %s, notes = 'Оплата картой через ЮКасса'
+            WHERE id = %s AND user_id = %s
+        """, (expires_at, access_token, order_id, user_id))
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        send_order_notification(
+            order_id=order_id,
+            product_title=product['title'] if product else '—',
+            amount=amount,
+            user_name=user_row['full_name'] if user_row else '',
+            user_email=user_row['email'] if user_row else '',
+            payment_method='card'
+        )
+
+    else:
+        # Пополнение баланса кошелька
+        wallet_id = payment_row['wallet_id']
+
+        cursor.execute(f"""
+            UPDATE {SCHEMA}.wallets
+            SET balance = balance + %s, updated_at = NOW()
+            WHERE id = %s
+        """, (amount, wallet_id))
+
+        cursor.execute(f"""
+            INSERT INTO {SCHEMA}.wallet_transactions (wallet_id, amount, type, description)
+            VALUES (%s, %s, 'credit', %s)
+        """, (wallet_id, amount, f'Пополнение через ЮКасса (платёж {payment_id[:8]}...)'))
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        send_order_notification(
+            order_id=None,
+            product_title=f'Пополнение кошелька',
+            amount=amount,
+            user_name=user_row['full_name'] if user_row else '',
+            user_email=user_row['email'] if user_row else '',
+            payment_method='card'
+        )
 
     return {
         'statusCode': 200,

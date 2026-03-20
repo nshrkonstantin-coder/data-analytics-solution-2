@@ -1,8 +1,29 @@
 import json
 import os
 import secrets
+import urllib.request
 import psycopg2
 from psycopg2.extras import RealDictCursor
+
+NOTIFY_URL = 'https://functions.poehali.dev/9812cd97-edcd-4540-858b-96ce682d8f82'
+
+
+def send_order_notification(order_id, product_title, amount, user_name, user_email, payment_method):
+    try:
+        payload = json.dumps({
+            'type': 'order_paid',
+            'order_id': order_id,
+            'product_title': product_title,
+            'amount': amount,
+            'user_name': user_name,
+            'user_email': user_email,
+            'payment_method': payment_method,
+        }).encode('utf-8')
+        req = urllib.request.Request(NOTIFY_URL, data=payload, method='POST')
+        req.add_header('Content-Type', 'application/json')
+        urllib.request.urlopen(req, timeout=5)
+    except Exception:
+        pass
 
 def handler(event: dict, context) -> dict:
     """API для управления заказами: создание, оплата, подтверждение доступа, проверка подписки"""
@@ -494,8 +515,21 @@ def pay_from_wallet(conn, user_id: int, body: dict) -> dict:
     """, (wallet['id'], amount, f'Покупка: {product["title"]}'))
 
     conn.commit()
-    cursor.close()
+
+    cursor2 = conn.cursor(cursor_factory=RealDictCursor)
+    cursor2.execute("SELECT email, full_name FROM users WHERE id = %s", (user_id,))
+    user_row = cursor2.fetchone()
+    cursor2.close()
     conn.close()
+
+    send_order_notification(
+        order_id=order['id'],
+        product_title=product['title'],
+        amount=amount,
+        user_name=user_row['full_name'] if user_row else '',
+        user_email=user_row['email'] if user_row else '',
+        payment_method='wallet'
+    )
 
     return {
         'statusCode': 201,

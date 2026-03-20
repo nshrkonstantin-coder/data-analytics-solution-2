@@ -7,6 +7,7 @@ import { authService } from '@/lib/auth'
 const PRODUCTS_API_URL = 'https://functions.poehali.dev/4d2b5055-dabb-4c6e-aa52-48d8657f7596'
 const ORDERS_API_URL = 'https://functions.poehali.dev/039e26de-4ba3-422f-a486-d3c175ff2b2b'
 const WALLET_API_URL = 'https://functions.poehali.dev/e00e6aa9-1a59-4dd1-9630-1960a065f4ee'
+const YOOKASSA_API_URL = 'https://functions.poehali.dev/d08c7aac-f64d-4b7b-b949-f503280104b7'
 
 interface Product {
   id: number
@@ -30,6 +31,8 @@ export function ShopPage() {
   const [payLoading, setPayLoading] = useState(false)
   const [payError, setPayError] = useState('')
   const [paySuccess, setPaySuccess] = useState<{ orderId: number; accessToken: string; websiteUrl: string } | null>(null)
+  const [cardPaymentId, setCardPaymentId] = useState<string | null>(null)
+  const [cardPayMethod, setCardPayMethod] = useState<'card' | null>(null)
 
   const getToken = () => localStorage.getItem('auth_token') || ''
 
@@ -108,6 +111,36 @@ export function ShopPage() {
   const handlePayByRequisites = () => {
     if (!buyProduct) return
     navigate(`/dashboard/orders?product=${buyProduct.id}`)
+  }
+
+  const handlePayWithCard = async () => {
+    if (!buyProduct) return
+    setPayLoading(true)
+    setPayError('')
+    setCardPayMethod('card')
+    try {
+      const returnUrl = `${window.location.origin}/shop?paid=card`
+      const res = await fetch(`${YOOKASSA_API_URL}?action=buy-with-card`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify({ product_id: buyProduct.id, return_url: returnUrl }),
+      })
+      const data = await res.json()
+      if (data.confirmation_url) {
+        setCardPaymentId(data.payment_id)
+        window.location.href = data.confirmation_url
+      } else {
+        setPayError(data.error || 'Не удалось создать платёж')
+        setCardPayMethod(null)
+      }
+    } catch {
+      setPayError('Ошибка соединения, попробуйте ещё раз')
+      setCardPayMethod(null)
+    }
+    setPayLoading(false)
   }
 
   if (loading) {
@@ -437,6 +470,27 @@ export function ShopPage() {
                       <span className="text-secondary text-sm font-medium">Пополнить кошелёк</span>
                     </button>
                   )}
+
+                  {/* Оплата картой напрямую */}
+                  <button
+                    onClick={handlePayWithCard}
+                    disabled={payLoading}
+                    className="w-full p-4 rounded-xl border border-[#FF8E53]/30 bg-[#FF8E53]/5 hover:bg-[#FF8E53]/10 hover:border-[#FF8E53]/50 transition-all text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-[#FF8E53]/15 flex items-center justify-center flex-shrink-0">
+                        {payLoading && cardPayMethod === 'card'
+                          ? <Icon name="Loader2" size={20} className="text-[#FF8E53] animate-spin" />
+                          : <Icon name="CreditCard" size={20} className="text-[#FF8E53]" />
+                        }
+                      </div>
+                      <div>
+                        <p className="text-white font-medium text-sm">Банковской картой</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Visa, Mastercard, Мир, СБП · ЮКасса</p>
+                      </div>
+                      <Icon name="ChevronRight" size={18} className="text-muted-foreground ml-auto flex-shrink-0" />
+                    </div>
+                  </button>
 
                   {/* Оплата по реквизитам */}
                   <button

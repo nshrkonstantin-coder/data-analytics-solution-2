@@ -5,6 +5,7 @@ import Icon from '@/components/ui/icon'
 import { authService } from '@/lib/auth'
 
 const WALLET_API_URL = 'https://functions.poehali.dev/e00e6aa9-1a59-4dd1-9630-1960a065f4ee'
+const YOOKASSA_API_URL = 'https://functions.poehali.dev/d08c7aac-f64d-4b7b-b949-f503280104b7'
 
 interface Wallet {
   id: number
@@ -27,6 +28,10 @@ export function WalletPage() {
   const [wallet, setWallet] = useState<Wallet | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [error, setError] = useState('')
+  const [showTopup, setShowTopup] = useState(false)
+  const [topupAmount, setTopupAmount] = useState('')
+  const [topupLoading, setTopupLoading] = useState(false)
+  const [topupError, setTopupError] = useState('')
 
   useEffect(() => {
     const init = async () => {
@@ -42,6 +47,36 @@ export function WalletPage() {
   }, [navigate])
 
   const getToken = () => localStorage.getItem('auth_token') || ''
+
+  const handleTopup = async () => {
+    const amount = parseFloat(topupAmount)
+    if (!amount || amount < 1) {
+      setTopupError('Введите сумму от 1 ₽')
+      return
+    }
+    setTopupLoading(true)
+    setTopupError('')
+    try {
+      const returnUrl = `${window.location.origin}/dashboard/wallet?topup=success`
+      const res = await fetch(`${YOOKASSA_API_URL}?action=create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify({ amount, return_url: returnUrl }),
+      })
+      const data = await res.json()
+      if (data.confirmation_url) {
+        window.location.href = data.confirmation_url
+      } else {
+        setTopupError(data.error || 'Не удалось создать платёж')
+      }
+    } catch {
+      setTopupError('Ошибка соединения, попробуйте ещё раз')
+    }
+    setTopupLoading(false)
+  }
 
   const loadBalance = async () => {
     try {
@@ -142,19 +177,20 @@ export function WalletPage() {
               )}
             </div>
 
-            <div className="mt-4 p-4 rounded-xl bg-card/20 border border-primary/10">
-              <p className="text-sm text-muted-foreground text-center">
-                Для пополнения баланса обратитесь к администратору или оплатите
-                через реквизиты.
-              </p>
-              <div className="flex justify-center mt-3">
-                <Link to="/requisites">
-                  <Button size="sm" variant="outline" className="border-primary/30 hover:bg-primary/10 text-sm">
-                    <Icon name="Building2" size={14} className="mr-2" />
-                    Реквизиты для оплаты
-                  </Button>
-                </Link>
-              </div>
+            <div className="mt-4 flex gap-3">
+              <Button
+                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+                onClick={() => { setShowTopup(true); setTopupError(''); setTopupAmount('') }}
+              >
+                <Icon name="CreditCard" size={18} className="mr-2" />
+                Пополнить картой
+              </Button>
+              <Link to="/requisites" className="flex-1">
+                <Button variant="outline" className="w-full border-primary/30 hover:bg-primary/10">
+                  <Icon name="Building2" size={18} className="mr-2" />
+                  Реквизиты
+                </Button>
+              </Link>
             </div>
           </div>
 
@@ -249,6 +285,92 @@ export function WalletPage() {
 
         </div>
       </div>
+
+      {/* Модальное окно пополнения */}
+      {showTopup && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowTopup(false) }}
+        >
+          <div className="bg-[#1A2030] border border-primary/30 rounded-2xl p-8 w-full max-w-md shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                  <Icon name="CreditCard" size={22} className="text-primary" />
+                </div>
+                <h2 className="font-heading text-xl font-bold text-white">Пополнение баланса</h2>
+              </div>
+              <button
+                onClick={() => setShowTopup(false)}
+                className="text-muted-foreground hover:text-white transition-colors"
+              >
+                <Icon name="X" size={22} />
+              </button>
+            </div>
+
+            <p className="text-sm text-muted-foreground mb-5">
+              Введите сумму — вы будете перенаправлены на страницу оплаты ЮКасса.
+              После оплаты баланс пополнится автоматически.
+            </p>
+
+            <div className="mb-4">
+              <label className="block text-sm text-muted-foreground mb-2">Сумма пополнения</label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  placeholder="500"
+                  value={topupAmount}
+                  onChange={(e) => setTopupAmount(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleTopup()}
+                  className="w-full bg-card/50 border border-primary/20 rounded-xl px-4 py-3 pr-12 text-white text-lg font-heading focus:outline-none focus:border-primary/60 placeholder:text-muted-foreground/40"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-primary font-bold text-lg">₽</span>
+              </div>
+            </div>
+
+            <div className="flex gap-2 mb-4">
+              {[500, 1000, 2000, 5000].map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setTopupAmount(String(v))}
+                  className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                    topupAmount === String(v)
+                      ? 'bg-primary/20 border-primary/50 text-primary'
+                      : 'bg-card/30 border-white/10 text-muted-foreground hover:border-primary/30 hover:text-white'
+                  }`}
+                >
+                  {v.toLocaleString('ru-RU')}
+                </button>
+              ))}
+            </div>
+
+            {topupError && (
+              <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+                {topupError}
+              </div>
+            )}
+
+            <Button
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 text-base"
+              onClick={handleTopup}
+              disabled={topupLoading}
+            >
+              {topupLoading ? (
+                <Icon name="Loader2" size={20} className="animate-spin mr-2" />
+              ) : (
+                <Icon name="CreditCard" size={20} className="mr-2" />
+              )}
+              {topupLoading ? 'Создаём платёж...' : 'Перейти к оплате'}
+            </Button>
+
+            <p className="text-xs text-muted-foreground/60 text-center mt-3">
+              Оплата через ЮКасса · Visa, Mastercard, Мир, СБП
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

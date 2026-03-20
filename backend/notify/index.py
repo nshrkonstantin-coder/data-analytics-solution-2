@@ -32,7 +32,9 @@ def handler(event: dict, context) -> dict:
     event_type = body.get('type')
     if event_type == 'order_paid':
         return notify_order_paid(body)
-    
+    if event_type == 'new_register':
+        return notify_new_register(body)
+
     return _resp(400, {'error': 'Unknown event type'})
 
 
@@ -75,6 +77,44 @@ def notify_order_paid(data: dict) -> dict:
     </table>
     <div style="margin-top: 20px; padding: 12px; background: #f5f5f5; border-radius: 8px; font-size: 13px; color: #666;">
       Заказ подтверждён автоматически. Проверьте раздел «Заказы» в административной панели.
+    </div>
+  </div>
+</body></html>
+"""
+
+    send_email(subject, html)
+    return _resp(200, {'ok': True})
+
+
+def notify_new_register(data: dict) -> dict:
+    """Отправляет письмо администратору о новой регистрации пользователя"""
+    user_email = data.get('user_email', '—')
+    user_name = data.get('user_name') or '—'
+    user_phone = data.get('user_phone') or '—'
+    registered_at = data.get('registered_at', '—')
+
+    subject = f'Новая регистрация — {user_email}'
+
+    html = f"""
+<html><body style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
+  <div style="background: #1a1a2e; padding: 24px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: #fff; margin: 0; font-size: 22px;">MAXISOFTZAB</h1>
+    <p style="color: #aaa; margin: 4px 0 0;">Уведомление о новой регистрации</p>
+  </div>
+  <div style="border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 12px 12px; padding: 24px;">
+    <h2 style="color: #e85d04; margin-top: 0;">Новый пользователь зарегистрировался</h2>
+    <table style="width: 100%; border-collapse: collapse;">
+      <tr><td style="padding: 8px 0; color: #666;">Email</td>
+          <td style="padding: 8px 0; font-weight: bold;">{user_email}</td></tr>
+      <tr><td style="padding: 8px 0; color: #666;">Имя</td>
+          <td style="padding: 8px 0;">{user_name}</td></tr>
+      <tr><td style="padding: 8px 0; color: #666;">Телефон</td>
+          <td style="padding: 8px 0;">{user_phone}</td></tr>
+      <tr><td style="padding: 8px 0; color: #666;">Дата регистрации</td>
+          <td style="padding: 8px 0;">{registered_at}</td></tr>
+    </table>
+    <div style="margin-top: 20px; padding: 12px; background: #f5f5f5; border-radius: 8px; font-size: 13px; color: #666;">
+      Проверьте раздел «Пользователи» в административной панели.
     </div>
   </div>
 </body></html>

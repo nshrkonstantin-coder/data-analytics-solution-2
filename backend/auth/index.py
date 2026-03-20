@@ -1,10 +1,22 @@
 import json
 import os
 import secrets
+import urllib.request
 from datetime import datetime, timedelta
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import bcrypt
+
+NOTIFY_URL = 'https://functions.poehali.dev/9812cd97-edcd-4540-858b-96ce682d8f82'
+
+
+def send_notify(payload: dict):
+    try:
+        data = json.dumps(payload).encode('utf-8')
+        req = urllib.request.Request(NOTIFY_URL, data=data, headers={'Content-Type': 'application/json'}, method='POST')
+        urllib.request.urlopen(req, timeout=5)
+    except Exception:
+        pass
 
 def handler(event: dict, context) -> dict:
     """API для регистрации, авторизации и управления сессиями пользователей"""
@@ -120,7 +132,15 @@ def register_user(conn, body: dict) -> dict:
     conn.commit()
     cursor.close()
     conn.close()
-    
+
+    send_notify({
+        'type': 'new_register',
+        'user_email': user['email'],
+        'user_name': user['full_name'],
+        'user_phone': phone,
+        'registered_at': datetime.now().strftime('%d.%m.%Y %H:%M'),
+    })
+
     return {
         'statusCode': 201,
         'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},

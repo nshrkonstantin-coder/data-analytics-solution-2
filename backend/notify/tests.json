@@ -31,6 +31,21 @@
       "expectedStatus": 200,
       "expectedBody": {"ok": true},
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "Notify new register (no SMTP configured — should not crash)",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "type": "new_register",
+        "user_email": "test@example.com",
+        "user_name": "Test User",
+        "user_phone": "+7 999 000-00-00",
+        "registered_at": "01.01.2025 12:00"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {"ok": true},
+      "bodyMatcher": "partial"
     }
   ]
 }

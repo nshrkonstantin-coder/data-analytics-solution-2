@@ -5,6 +5,8 @@ import Icon from '@/components/ui/icon'
 import { authService } from '@/lib/auth'
 
 const PRODUCTS_API_URL = 'https://functions.poehali.dev/4d2b5055-dabb-4c6e-aa52-48d8657f7596'
+const ORDERS_API_URL = 'https://functions.poehali.dev/039e26de-4ba3-422f-a486-d3c175ff2b2b'
+const WALLET_API_URL = 'https://functions.poehali.dev/e00e6aa9-1a59-4dd1-9630-1960a065f4ee'
 
 interface Product {
   id: number
@@ -23,13 +25,30 @@ export function ShopPage() {
   const [loading, setLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [buyProduct, setBuyProduct] = useState<Product | null>(null)
+  const [walletBalance, setWalletBalance] = useState<number | null>(null)
+  const [payLoading, setPayLoading] = useState(false)
+  const [payError, setPayError] = useState('')
+  const [paySuccess, setPaySuccess] = useState<{ orderId: number; accessToken: string; websiteUrl: string } | null>(null)
+
+  const getToken = () => localStorage.getItem('auth_token') || ''
 
   useEffect(() => {
     const checkAuth = async () => {
       const result = await authService.verifySession()
       setIsAuthenticated(result.valid)
+      if (result.valid) {
+        try {
+          const res = await fetch(`${WALLET_API_URL}?action=balance`, {
+            headers: { Authorization: `Bearer ${getToken()}` },
+          })
+          const data = await res.json()
+          if (data.wallet) setWalletBalance(Number(data.wallet.balance))
+        } catch {
+          setWalletBalance(null)
+        }
+      }
     }
-    
     checkAuth()
   }, [])
 
@@ -49,12 +68,46 @@ export function ShopPage() {
     fetchProducts()
   }, [])
 
-  const handleBuy = (productId: number) => {
+  const handleBuy = (product: Product) => {
     if (!isAuthenticated) {
       navigate('/login')
-    } else {
-      navigate(`/dashboard/orders?product=${productId}`)
+      return
     }
+    setSelectedProduct(null)
+    setBuyProduct(product)
+    setPayError('')
+    setPaySuccess(null)
+  }
+
+  const handlePayFromWallet = async () => {
+    if (!buyProduct) return
+    setPayLoading(true)
+    setPayError('')
+    try {
+      const res = await fetch(`${ORDERS_API_URL}?action=pay-from-wallet`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify({ product_id: buyProduct.id }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setWalletBalance((prev) => prev !== null ? prev - buyProduct.price : null)
+        setPaySuccess({ orderId: data.order_id, accessToken: data.access_token, websiteUrl: data.website_url })
+      } else {
+        setPayError(data.error || 'Ошибка оплаты')
+      }
+    } catch {
+      setPayError('Ошибка соединения, попробуйте ещё раз')
+    }
+    setPayLoading(false)
+  }
+
+  const handlePayByRequisites = () => {
+    if (!buyProduct) return
+    navigate(`/dashboard/orders?product=${buyProduct.id}`)
   }
 
   if (loading) {
@@ -161,7 +214,7 @@ export function ShopPage() {
                         </div>
                       </div>
                       <Button
-                        onClick={(e) => { e.stopPropagation(); handleBuy(product.id) }}
+                        onClick={(e) => { e.stopPropagation(); handleBuy(product) }}
                         className="bg-gradient-to-r from-primary to-[#FF8E53] hover:shadow-lg hover:shadow-primary/30"
                       >
                         <Icon name="ShoppingCart" size={18} className="mr-2" />
@@ -253,7 +306,7 @@ export function ShopPage() {
                   </div>
                 </div>
                 <Button
-                  onClick={() => { setSelectedProduct(null); handleBuy(selectedProduct.id) }}
+                  onClick={() => handleBuy(selectedProduct)}
                   size="lg"
                   className="bg-gradient-to-r from-primary to-[#FF8E53] hover:shadow-lg hover:shadow-primary/30 text-lg px-8"
                 >
@@ -262,6 +315,149 @@ export function ShopPage() {
                 </Button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно выбора способа оплаты */}
+      {buyProduct && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
+          onClick={(e) => { if (e.target === e.currentTarget && !payLoading) setBuyProduct(null) }}
+        >
+          <div className="bg-[#1A2030] border border-primary/30 rounded-2xl p-8 w-full max-w-md shadow-2xl">
+
+            {paySuccess ? (
+              /* Успешная оплата */
+              <div className="text-center">
+                <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-4">
+                  <Icon name="CheckCircle2" size={36} className="text-green-400" />
+                </div>
+                <h2 className="font-heading text-2xl font-bold text-white mb-2">Оплата прошла!</h2>
+                <p className="text-muted-foreground text-sm mb-6">
+                  Доступ к <span className="text-white font-medium">{buyProduct.title}</span> открыт
+                </p>
+                <div className="flex flex-col gap-3">
+                  {paySuccess.websiteUrl && (
+                    <a href={paySuccess.websiteUrl} target="_blank" rel="noreferrer">
+                      <Button className="w-full bg-gradient-to-r from-primary to-[#FF8E53]">
+                        <Icon name="ExternalLink" size={18} className="mr-2" />
+                        Перейти на сайт продукта
+                      </Button>
+                    </a>
+                  )}
+                  <Button
+                    variant="outline"
+                    className="w-full border-primary/30 hover:bg-primary/10"
+                    onClick={() => navigate('/dashboard/orders')}
+                  >
+                    <Icon name="Package" size={18} className="mr-2" />
+                    Мои заказы
+                  </Button>
+                  <button
+                    className="text-sm text-muted-foreground hover:text-white transition-colors"
+                    onClick={() => setBuyProduct(null)}
+                  >
+                    Продолжить покупки
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Выбор способа оплаты */
+              <>
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className="font-heading text-xl font-bold text-white">Оплата</h2>
+                    <p className="text-sm text-muted-foreground mt-0.5">{buyProduct.title}</p>
+                  </div>
+                  <button
+                    onClick={() => setBuyProduct(null)}
+                    className="text-muted-foreground hover:text-white transition-colors"
+                    disabled={payLoading}
+                  >
+                    <Icon name="X" size={22} />
+                  </button>
+                </div>
+
+                <div className="bg-card/30 rounded-xl p-4 mb-6 flex items-center justify-between">
+                  <span className="text-muted-foreground text-sm">Сумма к оплате</span>
+                  <span className="font-heading text-2xl font-bold text-primary">
+                    {buyProduct.price.toLocaleString('ru-RU')} ₽
+                  </span>
+                </div>
+
+                {payError && (
+                  <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+                    {payError}
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  {/* Оплата с баланса */}
+                  <button
+                    onClick={handlePayFromWallet}
+                    disabled={payLoading || walletBalance === null || walletBalance < buyProduct.price}
+                    className={`w-full p-4 rounded-xl border text-left transition-all ${
+                      walletBalance !== null && walletBalance >= buyProduct.price
+                        ? 'border-primary/40 bg-primary/10 hover:bg-primary/20 hover:border-primary/60'
+                        : 'border-white/10 bg-card/20 opacity-60 cursor-not-allowed'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                        {payLoading
+                          ? <Icon name="Loader2" size={20} className="text-primary animate-spin" />
+                          : <Icon name="Wallet" size={20} className="text-primary" />
+                        }
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white font-medium text-sm">Баланс кошелька</p>
+                        <p className={`text-xs mt-0.5 ${
+                          walletBalance !== null && walletBalance >= buyProduct.price
+                            ? 'text-green-400'
+                            : 'text-red-400'
+                        }`}>
+                          {walletBalance !== null
+                            ? `Доступно: ${walletBalance.toLocaleString('ru-RU', { minimumFractionDigits: 2 })} ₽`
+                            : 'Загрузка...'}
+                          {walletBalance !== null && walletBalance < buyProduct.price && ' — недостаточно средств'}
+                        </p>
+                      </div>
+                      <Icon name="ChevronRight" size={18} className="text-muted-foreground flex-shrink-0" />
+                    </div>
+                  </button>
+
+                  {/* Пополнить кошелёк если не хватает */}
+                  {walletBalance !== null && walletBalance < buyProduct.price && (
+                    <button
+                      onClick={() => navigate('/dashboard/wallet')}
+                      className="w-full p-3 rounded-xl border border-secondary/30 bg-secondary/5 hover:bg-secondary/10 transition-colors text-left flex items-center gap-3"
+                    >
+                      <Icon name="PlusCircle" size={18} className="text-secondary flex-shrink-0" />
+                      <span className="text-secondary text-sm font-medium">Пополнить кошелёк</span>
+                    </button>
+                  )}
+
+                  {/* Оплата по реквизитам */}
+                  <button
+                    onClick={handlePayByRequisites}
+                    disabled={payLoading}
+                    className="w-full p-4 rounded-xl border border-white/10 bg-card/20 hover:border-primary/30 hover:bg-card/40 transition-all text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0">
+                        <Icon name="Building2" size={20} className="text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="text-white font-medium text-sm">По реквизитам</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Перевод на счёт, подтверждение вручную</p>
+                      </div>
+                      <Icon name="ChevronRight" size={18} className="text-muted-foreground ml-auto flex-shrink-0" />
+                    </div>
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

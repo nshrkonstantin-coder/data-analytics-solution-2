@@ -83,6 +83,8 @@ def handler(event: dict, context) -> dict:
                 return user_confirm_payment(conn, user['id'], body)
             elif action == 'renew':
                 return renew_subscription(conn, user['id'], body)
+            elif action == 'pay-from-wallet':
+                return pay_from_wallet(conn, user['id'], body)
         
         conn.close()
         return {
@@ -403,6 +405,109 @@ def check_access(conn, access_token: str) -> dict:
             'product_title': order['product_title'],
             'expires_at': str(order['expires_at']) if order['expires_at'] else None
         }),
+        'isBase64Encoded': False
+    }
+
+
+def pay_from_wallet(conn, user_id: int, body: dict) -> dict:
+    """Создаёт заказ и сразу оплачивает его с баланса кошелька пользователя"""
+    product_id = body.get('product_id')
+
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    cursor.execute("""
+        SELECT id, title, price, subscription_days, website_url, is_subscription
+        FROM products WHERE id = %s AND is_active = TRUE
+    """, (product_id,))
+    product = cursor.fetchone()
+
+    if not product:
+        cursor.close()
+        conn.close()
+        return {
+            'statusCode': 404,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'Продукт не найден'}),
+            'isBase64Encoded': False
+        }
+
+    cursor.execute("""
+        SELECT id FROM orders
+        WHERE user_id = %s AND product_id = %s AND payment_confirmed = TRUE AND expires_at > NOW()
+        LIMIT 1
+    """, (user_id, product_id))
+    if cursor.fetchone():
+        cursor.close()
+        conn.close()
+        return {
+            'statusCode': 400,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'У вас уже есть активная подписка на этот продукт'}),
+            'isBase64Encoded': False
+        }
+
+    cursor.execute("SELECT id, balance FROM wallets WHERE user_id = %s", (user_id,))
+    wallet = cursor.fetchone()
+
+    if not wallet:
+        cursor.close()
+        conn.close()
+        return {
+            'statusCode': 404,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'Кошелёк не найден'}),
+            'isBase64Encoded': False
+        }
+
+    amount = float(product['price'])
+    if float(wallet['balance']) < amount:
+        cursor.close()
+        conn.close()
+        return {
+            'statusCode': 402,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': f'Недостаточно средств. Нужно {amount:.2f} ₽, на балансе {float(wallet["balance"]):.2f} ₽'}),
+            'isBase64Encoded': False
+        }
+
+    access_token = secrets.token_urlsafe(32)
+
+    from datetime import datetime, timedelta
+    expires_at = None
+    if product['subscription_days']:
+        expires_at = datetime.now() + timedelta(days=int(product['subscription_days']))
+
+    cursor.execute("""
+        INSERT INTO orders (user_id, product_id, total_amount, status, payment_confirmed,
+                            paid_at, expires_at, access_token, payment_reference, notes)
+        VALUES (%s, %s, %s, 'paid', TRUE, NOW(), %s, %s, 'wallet', 'Оплата с баланса кошелька')
+        RETURNING id
+    """, (user_id, product_id, amount, expires_at, access_token))
+    order = cursor.fetchone()
+
+    cursor.execute("""
+        UPDATE wallets SET balance = balance - %s, updated_at = NOW() WHERE id = %s
+    """, (amount, wallet['id']))
+
+    cursor.execute("""
+        INSERT INTO wallet_transactions (wallet_id, amount, type, description)
+        VALUES (%s, %s, 'debit', %s)
+    """, (wallet['id'], amount, f'Покупка: {product["title"]}'))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return {
+        'statusCode': 201,
+        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+        'body': json.dumps({
+            'message': 'Оплата прошла успешно',
+            'order_id': order['id'],
+            'access_token': access_token,
+            'product_title': product['title'],
+            'website_url': product['website_url'],
+            'expires_at': str(expires_at) if expires_at else None
+        }, default=str),
         'isBase64Encoded': False
     }
 

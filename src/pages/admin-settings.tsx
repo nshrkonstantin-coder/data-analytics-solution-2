@@ -7,6 +7,8 @@ import { authService } from "@/lib/auth";
 
 const ADMIN_API_URL =
   "https://functions.poehali.dev/60c925e5-07c4-4e22-acbb-7c60c1d9524d";
+const NOTIFY_API_URL =
+  "https://functions.poehali.dev/9812cd97-edcd-4540-858b-96ce682d8f82";
 
 interface SiteSettings {
   site_name: string;
@@ -165,6 +167,8 @@ export function AdminSettingsPage() {
   const [activeGroup, setActiveGroup] = useState(SETTING_GROUPS[0]);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
+  const [testingEmail, setTestingEmail] = useState(false);
+  const [testEmailResult, setTestEmailResult] = useState<{ok: boolean; message: string} | null>(null);
 
   useEffect(() => {
     const verifyAdmin = async () => {
@@ -248,6 +252,28 @@ export function AdminSettingsPage() {
     setSettings((prev) => ({ ...prev, [key]: value }));
   };
 
+  const handleTestEmail = async () => {
+    setTestingEmail(true);
+    setTestEmailResult(null);
+    try {
+      const res = await fetch(NOTIFY_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'test' }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setTestEmailResult({ ok: true, message: data.message || 'Письмо отправлено!' });
+      } else {
+        setTestEmailResult({ ok: false, message: data.error || 'Ошибка отправки' });
+      }
+    } catch {
+      setTestEmailResult({ ok: false, message: 'Ошибка соединения' });
+    } finally {
+      setTestingEmail(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0F1419] flex items-center justify-center">
@@ -291,6 +317,38 @@ export function AdminSettingsPage() {
               <span className="text-red-400">{error}</span>
             </div>
           )}
+
+          <div className="bg-card/50 backdrop-blur-xl border border-primary/20 rounded-2xl p-6 mb-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Icon name="Mail" size={20} className="text-primary" />
+              </div>
+              <div>
+                <h2 className="font-heading text-lg font-bold text-white">Email-уведомления</h2>
+                <p className="text-xs text-muted-foreground">Письма отправляются на ddmaxi-srs@yandex.ru</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <Button
+                onClick={handleTestEmail}
+                disabled={testingEmail}
+                variant="outline"
+                className="border-primary/30 hover:bg-primary/10 font-heading"
+              >
+                {testingEmail ? (
+                  <><Icon name="Loader2" size={16} className="mr-2 animate-spin" />Отправка...</>
+                ) : (
+                  <><Icon name="Send" size={16} className="mr-2" />Отправить тестовое письмо</>
+                )}
+              </Button>
+              {testEmailResult && (
+                <div className={`flex items-center gap-2 text-sm ${testEmailResult.ok ? 'text-green-400' : 'text-red-400'}`}>
+                  <Icon name={testEmailResult.ok ? 'CheckCircle' : 'AlertCircle'} size={16} />
+                  {testEmailResult.message}
+                </div>
+              )}
+            </div>
+          </div>
 
           <div className="flex flex-col lg:flex-row gap-6">
             <div className="lg:w-64 flex-shrink-0">

@@ -34,6 +34,8 @@ def handler(event: dict, context) -> dict:
         return notify_order_paid(body)
     if event_type == 'new_register':
         return notify_new_register(body)
+    if event_type == 'test':
+        return notify_test()
 
     return _resp(400, {'error': 'Unknown event type'})
 
@@ -122,6 +124,30 @@ def notify_new_register(data: dict) -> dict:
 
     send_email(subject, html)
     return _resp(200, {'ok': True})
+
+
+def notify_test() -> dict:
+    """Тестовая отправка письма для проверки SMTP-настроек"""
+    admin_email = os.environ.get('ADMIN_EMAIL', '')
+    subject = 'Тест уведомлений MAXISOFTZAB'
+    html = f"""
+<html><body style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
+  <div style="background: #1a1a2e; padding: 24px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: #fff; margin: 0; font-size: 22px;">MAXISOFTZAB</h1>
+    <p style="color: #aaa; margin: 4px 0 0;">Тест системы уведомлений</p>
+  </div>
+  <div style="border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 12px 12px; padding: 24px;">
+    <h2 style="color: #e85d04; margin-top: 0;">✅ Почта работает!</h2>
+    <p>Это тестовое письмо. Если вы его получили — уведомления настроены правильно.</p>
+    <p style="color: #666; font-size: 13px;">Письма будут приходить на: <strong>{admin_email}</strong></p>
+  </div>
+</body></html>
+"""
+    try:
+        send_email(subject, html)
+        return _resp(200, {'ok': True, 'message': f'Тестовое письмо отправлено на {admin_email}'})
+    except Exception as e:
+        return _resp(500, {'error': str(e)})
 
 
 def send_email(subject: str, html_body: str):

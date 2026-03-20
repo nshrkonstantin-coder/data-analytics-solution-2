@@ -1,9 +1,21 @@
 import json
 import os
 import secrets
+import urllib.request
 import bcrypt
 import psycopg2
 from psycopg2.extras import RealDictCursor
+
+NOTIFY_URL = 'https://functions.poehali.dev/9812cd97-edcd-4540-858b-96ce682d8f82'
+
+
+def send_notify(payload: dict):
+    try:
+        data = json.dumps(payload).encode('utf-8')
+        req = urllib.request.Request(NOTIFY_URL, data=data, headers={'Content-Type': 'application/json'}, method='POST')
+        urllib.request.urlopen(req, timeout=5)
+    except Exception:
+        pass
 
 def handler(event: dict, context) -> dict:
     """API для админ-панели - управление контентом, пользователями, продуктами и заказами"""
@@ -399,8 +411,30 @@ def admin_confirm_payment(conn, body: dict) -> dict:
     """ % (sub_days, '%s', '%s', '%s', '%s'), (access_token, payment_reference, notes, order_id))
     
     conn.commit()
-    cursor.close()
-    
+
+    cursor3 = conn.cursor(cursor_factory=RealDictCursor)
+    cursor3.execute("""
+        SELECT u.email, u.full_name, p.title as product_title, o.total_amount
+        FROM orders o
+        JOIN users u ON o.user_id = u.id
+        JOIN products p ON o.product_id = p.id
+        WHERE o.id = %s
+    """, (order_id,))
+    order_info = cursor3.fetchone()
+    cursor3.close()
+    conn.close()
+
+    if order_info:
+        send_notify({
+            'type': 'order_paid',
+            'order_id': order_id,
+            'product_title': order_info['product_title'],
+            'amount': float(order_info['total_amount']),
+            'user_name': order_info['full_name'],
+            'user_email': order_info['email'],
+            'payment_method': 'requisites',
+        })
+
     return {
         'statusCode': 200,
         'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},

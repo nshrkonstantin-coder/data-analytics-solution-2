@@ -52,6 +52,9 @@ const DEFAULT_SECTIONS = [
     { key: 'description', label: 'Описание', type: 'textarea', current: 'Разработка программного обеспечения и обслуживание автотранспорта в Забайкалье', preview: 'Краткое описание компании' },
     { key: 'copyright', label: 'Copyright текст', type: 'text', current: '© 2025 MaxiSoftZab. Все права защищены.', preview: 'Текст копирайта' },
   ]},
+  { id: 'legal', name: '🔒 Согласие на ПД', icon: 'Shield', fields: [
+    { key: 'consent_text', label: 'Текст согласия на обработку персональных данных', type: 'textarea', current: 'Нажимая кнопку «Зарегистрироваться», я даю согласие на обработку моих персональных данных в соответствии с Политикой конфиденциальности и соглашаюсь с условиями пользовательского соглашения.', preview: 'Отображается под формой регистрации перед кнопкой' },
+  ]},
   { id: 'images', name: '🖼️ Изображения', icon: 'Image', fields: [
     { key: 'logo', label: 'Логотип компании', type: 'image', current: '', preview: 'Логотип в шапке сайта', imageUrl: 'https://via.placeholder.com/200x80?text=LOGO' },
     { key: 'hero_bg', label: 'Фон главного экрана', type: 'image', current: '', preview: 'Фоновое изображение на главной', imageUrl: 'https://via.placeholder.com/1920x1080?text=Hero+Background' },

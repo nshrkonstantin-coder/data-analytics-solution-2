@@ -1,14 +1,20 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Icon from '@/components/ui/icon'
 import { authService } from '@/lib/auth'
 
+const ADMIN_API_URL = 'https://functions.poehali.dev/60c925e5-07c4-4e22-acbb-7c60c1d9524d'
+
+const DEFAULT_CONSENT_TEXT = 'Нажимая кнопку «Зарегистрироваться», я даю согласие на обработку моих персональных данных в соответствии с Политикой конфиденциальности и соглашаюсь с условиями пользовательского соглашения.'
+
 export function RegisterPage() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [consentChecked, setConsentChecked] = useState(false)
+  const [consentText, setConsentText] = useState(DEFAULT_CONSENT_TEXT)
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -17,9 +23,27 @@ export function RegisterPage() {
     phone: '',
   })
 
+  useEffect(() => {
+    fetch(`${ADMIN_API_URL}?action=content`)
+      .then(r => r.json())
+      .then(data => {
+        const item = (data.content || []).find(
+          (c: { section: string; key: string; content: string }) =>
+            c.section === 'legal' && c.key === 'consent_text'
+        )
+        if (item?.content) setConsentText(item.content)
+      })
+      .catch(() => {})
+  }, [])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+
+    if (!consentChecked) {
+      setError('Необходимо дать согласие на обработку персональных данных')
+      return
+    }
 
     if (formData.password !== formData.confirmPassword) {
       setError('Пароли не совпадают')
@@ -142,6 +166,28 @@ export function RegisterPage() {
                 placeholder="Повторите пароль"
                 className="bg-background/50 border-primary/30 focus:border-primary"
               />
+            </div>
+
+            <div
+              className={`flex items-start gap-3 p-4 rounded-xl border transition-colors cursor-pointer ${
+                consentChecked
+                  ? 'border-primary/40 bg-primary/5'
+                  : 'border-primary/20 bg-background/30'
+              }`}
+              onClick={() => setConsentChecked(!consentChecked)}
+            >
+              <div className={`mt-0.5 w-5 h-5 rounded flex-shrink-0 flex items-center justify-center border-2 transition-colors ${
+                consentChecked
+                  ? 'bg-primary border-primary'
+                  : 'border-primary/40 bg-transparent'
+              }`}>
+                {consentChecked && (
+                  <Icon name="Check" size={12} className="text-white" />
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed select-none">
+                {consentText}
+              </p>
             </div>
 
             <Button

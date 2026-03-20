@@ -73,6 +73,7 @@ export function AdminContentPage() {
   const [selectedSection, setSelectedSection] = useState(DEFAULT_SECTIONS[0])
   const [formData, setFormData] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
+  const [savingAll, setSavingAll] = useState(false)
   const [success, setSuccess] = useState('')
   const [error, setError] = useState('')
   const [uploadingImage, setUploadingImage] = useState<string | null>(null)
@@ -225,6 +226,31 @@ export function AdminContentPage() {
     }
   }
 
+  const handleSaveAll = async () => {
+    setSavingAll(true)
+    setError('')
+    const token = localStorage.getItem('auth_token')
+    const textFields = selectedSection.fields.filter(f => f.type !== 'image')
+
+    try {
+      await Promise.all(textFields.map(field =>
+        fetch(`${ADMIN_API_URL}?action=content`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ section: selectedSection.id, key: field.key, content: formData[field.key] || '', content_type: 'text' }),
+        })
+      ))
+      setSuccess(`Все поля раздела "${selectedSection.name}" сохранены`)
+      const freshContent = await loadContent()
+      if (freshContent) loadSectionData(selectedSection, freshContent)
+      setTimeout(() => setSuccess(''), 3000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ошибка сохранения')
+    } finally {
+      setSavingAll(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0F1419] flex items-center justify-center">
@@ -294,9 +320,30 @@ export function AdminContentPage() {
 
             <div className="lg:col-span-3">
               <div className="bg-card/50 backdrop-blur-xl border border-primary/20 rounded-2xl p-8">
-                <h2 className="font-heading text-2xl font-bold text-white mb-6">
-                  {selectedSection.name}
-                </h2>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="font-heading text-2xl font-bold text-white">
+                    {selectedSection.name}
+                  </h2>
+                  {selectedSection.fields.some(f => f.type !== 'image') && (
+                    <Button
+                      onClick={handleSaveAll}
+                      disabled={savingAll || saving}
+                      className="bg-gradient-to-r from-primary to-[#FF8E53] hover:shadow-lg hover:shadow-primary/30"
+                    >
+                      {savingAll ? (
+                        <>
+                          <Icon name="Loader2" size={16} className="mr-2 animate-spin" />
+                          Сохранение...
+                        </>
+                      ) : (
+                        <>
+                          <Icon name="SaveAll" size={16} className="mr-2" />
+                          Сохранить всё
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
 
                 {error && (
                   <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-6 flex items-start gap-2">

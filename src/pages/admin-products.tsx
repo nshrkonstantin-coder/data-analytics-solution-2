@@ -6,7 +6,7 @@ import Icon from '@/components/ui/icon'
 import { authService } from '@/lib/auth'
 
 const ADMIN_API_URL = 'https://functions.poehali.dev/60c925e5-07c4-4e22-acbb-7c60c1d9524d'
-const UPLOAD_API_URL = 'https://functions.poehali.dev/0dcbc7f5-3b22-4665-a98a-18fb4e1124d2'
+const UPLOAD_API_URL = 'https://functions.poehali.dev/33feb542-a147-4f71-a8f4-372709cc12e7'
 
 interface Upgrade {
   title: string

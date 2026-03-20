@@ -22,7 +22,7 @@ def handler(event: dict, context) -> dict:
             'isBase64Encoded': False
         }
     
-    action = event.get('queryStringParameters', {}).get('action', '')
+    action = (event.get('queryStringParameters') or {}).get('action', '')
     
     try:
         conn = psycopg2.connect(os.environ['DATABASE_URL'])

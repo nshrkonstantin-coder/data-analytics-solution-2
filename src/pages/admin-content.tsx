@@ -83,14 +83,15 @@ export function AdminContentPage() {
       if (!result.valid || result.user?.role !== 'admin') {
         navigate('/login')
       } else {
-        await loadContent()
+        const freshContent = await loadContent()
+        if (freshContent) loadSectionData(DEFAULT_SECTIONS[0], freshContent)
       }
     }
 
     verifyAdmin()
   }, [navigate])
 
-  const loadContent = async () => {
+  const loadContent = async (): Promise<Content[] | null> => {
     const token = localStorage.getItem('auth_token')
     try {
       const response = await fetch(`${ADMIN_API_URL}?action=content`, {
@@ -99,10 +100,12 @@ export function AdminContentPage() {
         },
       })
       const data = await response.json()
-      setContent(data.content || [])
-      loadSectionData(DEFAULT_SECTIONS[0], data.content || [])
+      const freshContent: Content[] = data.content || []
+      setContent(freshContent)
+      return freshContent
     } catch (error) {
       console.error('Ошибка загрузки контента:', error)
+      return null
     } finally {
       setLoading(false)
     }
@@ -169,8 +172,8 @@ export function AdminContentPage() {
           }
 
           setSuccess(`Изображение "${selectedSection.fields.find(f => f.key === fieldKey)?.label}" загружено`)
-          setFormData({ ...formData, [fieldKey]: imageUrl })
-          await loadContent()
+          const freshContent = await loadContent()
+          if (freshContent) loadSectionData(selectedSection, freshContent)
           setTimeout(() => setSuccess(''), 3000)
         } catch (err) {
           setError(err instanceof Error ? err.message : 'Ошибка загрузки изображения')
@@ -212,7 +215,8 @@ export function AdminContentPage() {
       }
 
       setSuccess(`Поле "${selectedSection.fields.find(f => f.key === fieldKey)?.label}" сохранено`)
-      await loadContent()
+      const freshContent = await loadContent()
+      if (freshContent) loadSectionData(selectedSection, freshContent)
       setTimeout(() => setSuccess(''), 3000)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка сохранения')

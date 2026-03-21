@@ -211,48 +211,38 @@ export function ShopPage() {
               </p>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
               {products.map((product) => (
                 <div
                   key={product.id}
-                  className="bg-card/50 backdrop-blur-xl border border-primary/20 rounded-2xl overflow-hidden hover:border-primary/40 transition-all duration-300 hover:-translate-y-2 group cursor-pointer"
+                  className="bg-card/50 backdrop-blur-xl border border-primary/20 rounded-xl overflow-hidden hover:border-primary/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10 group cursor-pointer"
                   onClick={() => setSelectedProduct(product)}
                 >
-                  <div className="relative h-48 overflow-hidden">
-                    <img
-                      src={product.image_url}
-                      alt={product.title}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
-                    <div className="absolute top-3 right-3 bg-primary/90 backdrop-blur-sm px-3 py-1 rounded-full">
-                      <span className="text-white font-heading font-bold text-sm">
+                  <div className="relative h-32 overflow-hidden">
+                    {product.image_url ? (
+                      <img
+                        src={product.image_url}
+                        alt={product.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-primary/10 flex items-center justify-center">
+                        <Icon name="Package" size={32} className="text-primary/40" />
+                      </div>
+                    )}
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-2 pb-1 pt-4">
+                      <span className="text-[10px] font-bold text-primary/90 uppercase tracking-wide">
                         {product.category}
                       </span>
                     </div>
                   </div>
-                  
-                  <div className="p-6">
-                    <h3 className="font-heading text-xl font-bold text-white mb-2">
+
+                  <div className="p-3">
+                    <h3 className="font-heading text-sm font-bold text-white leading-tight mb-2 line-clamp-2">
                       {product.title}
                     </h3>
-                    <p className="text-muted-foreground text-sm mb-4 line-clamp-3">
-                      {product.description}
-                    </p>
-                    
-                    <div className="flex items-center justify-between pt-4 border-t border-primary/20">
-                      <div>
-                        <div className="text-xs text-muted-foreground mb-1">Цена</div>
-                        <div className="font-heading text-2xl font-bold text-primary">
-                          {product.price.toLocaleString('ru-RU')} ₽
-                        </div>
-                      </div>
-                      <Button
-                        onClick={(e) => { e.stopPropagation(); handleBuy(product) }}
-                        className="bg-gradient-to-r from-primary to-[#FF8E53] hover:shadow-lg hover:shadow-primary/30"
-                      >
-                        <Icon name="ShoppingCart" size={18} className="mr-2" />
-                        Купить
-                      </Button>
+                    <div className="font-heading text-base font-bold text-primary">
+                      {product.price.toLocaleString('ru-RU')} ₽
                     </div>
                   </div>
                 </div>

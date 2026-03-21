@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
 import Icon from '@/components/ui/icon'
+import { Button } from '@/components/ui/button'
 
 const ADMIN_API_URL = 'https://functions.poehali.dev/60c925e5-07c4-4e22-acbb-7c60c1d9524d'
 
@@ -33,8 +34,14 @@ const DEFAULT_PRIVACY_TEXT = `1. ОБЩИЕ ПОЛОЖЕНИЯ
 По вопросам, связанным с обработкой персональных данных, обращайтесь: info@maxisoftzab.ru`
 
 export function PrivacyPage() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const fromRegister = location.state?.fromRegister === true
+
   const [privacyText, setPrivacyText] = useState(DEFAULT_PRIVACY_TEXT)
   const [loading, setLoading] = useState(true)
+  const [confirmed, setConfirmed] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     fetch(`${ADMIN_API_URL}?action=content`)
@@ -50,6 +57,15 @@ export function PrivacyPage() {
       .finally(() => setLoading(false))
   }, [])
 
+  const handleSave = () => {
+    if (!confirmed) {
+      setError('Необходимо поставить галочку для подтверждения')
+      return
+    }
+    sessionStorage.setItem('privacyConfirmed', 'true')
+    navigate('/register')
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0F1419] via-[#1a1f2e] to-[#0F1419] px-4 py-12">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent pointer-events-none" />
@@ -57,11 +73,11 @@ export function PrivacyPage() {
       <div className="max-w-3xl mx-auto relative z-10">
         <div className="mb-8">
           <Link
-            to="/"
+            to={fromRegister ? '/register' : '/'}
             className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1 mb-6"
           >
             <Icon name="ArrowLeft" size={16} />
-            На главную
+            {fromRegister ? 'Вернуться к регистрации' : 'На главную'}
           </Link>
           <div className="text-center">
             <Link to="/" className="inline-block mb-4">
@@ -106,17 +122,57 @@ export function PrivacyPage() {
               })}
             </div>
           )}
+
+          {fromRegister && (
+            <div className="border-t border-primary/20 pt-6 mt-6 space-y-4">
+              <div
+                className={`flex items-start gap-3 p-4 rounded-xl border transition-colors cursor-pointer ${
+                  confirmed
+                    ? 'border-green-500/40 bg-green-500/5'
+                    : 'border-primary/20 bg-background/30'
+                }`}
+                onClick={() => { setConfirmed(!confirmed); setError('') }}
+              >
+                <div className={`mt-0.5 w-5 h-5 rounded flex-shrink-0 flex items-center justify-center border-2 transition-colors ${
+                  confirmed
+                    ? 'bg-green-500 border-green-500'
+                    : 'border-primary/40 bg-transparent'
+                }`}>
+                  {confirmed && <Icon name="Check" size={12} className="text-white" />}
+                </div>
+                <p className="text-sm text-muted-foreground leading-relaxed select-none">
+                  Я согласен(а) с Политикой конфиденциальности и условиями пользовательского соглашения.
+                </p>
+              </div>
+
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 flex items-start gap-2">
+                  <Icon name="AlertCircle" size={20} className="text-red-500 mt-0.5 flex-shrink-0" />
+                  <p className="text-red-500 text-sm">{error}</p>
+                </div>
+              )}
+
+              <Button
+                onClick={handleSave}
+                className="w-full bg-gradient-to-r from-primary to-[#FF8E53] hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-1 transition-all duration-300 font-heading text-base h-12"
+              >
+                Сохранить
+              </Button>
+            </div>
+          )}
         </div>
 
-        <div className="mt-6 text-center">
-          <Link
-            to="/register"
-            className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
-          >
-            <Icon name="ArrowLeft" size={16} />
-            Вернуться к регистрации
-          </Link>
-        </div>
+        {!fromRegister && (
+          <div className="mt-6 text-center">
+            <Link
+              to="/register"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
+            >
+              <Icon name="ArrowLeft" size={16} />
+              Вернуться к регистрации
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   )

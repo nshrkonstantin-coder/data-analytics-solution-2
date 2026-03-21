@@ -5,16 +5,14 @@ import { Input } from '@/components/ui/input'
 import Icon from '@/components/ui/icon'
 import { authService } from '@/lib/auth'
 
-const ADMIN_API_URL = 'https://functions.poehali.dev/60c925e5-07c4-4e22-acbb-7c60c1d9524d'
-
-const DEFAULT_CONSENT_TEXT = 'Нажимая кнопку «Зарегистрироваться», я даю согласие на обработку моих персональных данных в соответствии с Политикой конфиденциальности и соглашаюсь с условиями пользовательского соглашения.'
-
 export function RegisterPage() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [consentChecked, setConsentChecked] = useState(false)
-  const [consentText, setConsentText] = useState(DEFAULT_CONSENT_TEXT)
+
+  const [consentConfirmed, setConsentConfirmed] = useState(false)
+  const [privacyConfirmed, setPrivacyConfirmed] = useState(false)
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -24,24 +22,27 @@ export function RegisterPage() {
   })
 
   useEffect(() => {
-    fetch(`${ADMIN_API_URL}?action=content`)
-      .then(r => r.json())
-      .then(data => {
-        const item = (data.content || []).find(
-          (c: { section: string; key: string; content: string }) =>
-            c.section === 'legal' && c.key === 'consent_text'
-        )
-        if (item?.content) setConsentText(item.content)
-      })
-      .catch(() => {})
+    if (sessionStorage.getItem('consentConfirmed') === 'true') {
+      setConsentConfirmed(true)
+    }
+    if (sessionStorage.getItem('privacyConfirmed') === 'true') {
+      setPrivacyConfirmed(true)
+    }
   }, [])
+
+  const canRegister = consentConfirmed && privacyConfirmed
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
-    if (!consentChecked) {
+    if (!consentConfirmed) {
       setError('Необходимо дать согласие на обработку персональных данных')
+      return
+    }
+
+    if (!privacyConfirmed) {
+      setError('Необходимо принять Политику конфиденциальности')
       return
     }
 
@@ -64,6 +65,9 @@ export function RegisterPage() {
         formData.full_name,
         formData.phone
       )
+      sessionStorage.removeItem('consentConfirmed')
+      sessionStorage.removeItem('consentDate')
+      sessionStorage.removeItem('privacyConfirmed')
       navigate('/dashboard')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка регистрации')
@@ -168,40 +172,56 @@ export function RegisterPage() {
               />
             </div>
 
-            <div
-              className={`flex items-start gap-3 p-4 rounded-xl border transition-colors cursor-pointer ${
-                consentChecked
-                  ? 'border-primary/40 bg-primary/5'
-                  : 'border-primary/20 bg-background/30'
-              }`}
-              onClick={() => setConsentChecked(!consentChecked)}
-            >
-              <div className={`mt-0.5 w-5 h-5 rounded flex-shrink-0 flex items-center justify-center border-2 transition-colors ${
-                consentChecked
-                  ? 'bg-primary border-primary'
-                  : 'border-primary/40 bg-transparent'
-              }`}>
-                {consentChecked && (
-                  <Icon name="Check" size={12} className="text-white" />
-                )}
-              </div>
-              <p className="text-sm text-muted-foreground leading-relaxed select-none">
-                {consentText}{' '}
-                <Link
-                  to="/privacy"
-                  target="_blank"
-                  className="text-primary hover:underline"
-                  onClick={e => e.stopPropagation()}
-                >
-                  Подробнее
-                </Link>
+            <div className="border-t border-primary/20 pt-4 space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Перед регистрацией необходимо дать Согласие на обработку персональных данных
               </p>
+
+              <div className="flex items-center justify-between gap-3 p-3 rounded-xl border border-primary/20 bg-background/30">
+                <div className="flex items-center gap-2">
+                  {consentConfirmed ? (
+                    <Icon name="CheckCircle2" size={20} className="text-green-500 flex-shrink-0" />
+                  ) : (
+                    <Icon name="Circle" size={20} className="text-muted-foreground/40 flex-shrink-0" />
+                  )}
+                  <span className="text-sm text-white">Согласие на ОПД</span>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="border-primary/40 text-primary hover:bg-primary/10 text-xs"
+                  onClick={() => navigate('/consent')}
+                >
+                  {consentConfirmed ? 'Просмотреть' : 'Открыть'}
+                </Button>
+              </div>
+
+              <div className="flex items-center justify-between gap-3 p-3 rounded-xl border border-primary/20 bg-background/30">
+                <div className="flex items-center gap-2">
+                  {privacyConfirmed ? (
+                    <Icon name="CheckCircle2" size={20} className="text-green-500 flex-shrink-0" />
+                  ) : (
+                    <Icon name="Circle" size={20} className="text-muted-foreground/40 flex-shrink-0" />
+                  )}
+                  <span className="text-sm text-white">Политика конфиденциальности</span>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="border-primary/40 text-primary hover:bg-primary/10 text-xs"
+                  onClick={() => navigate('/privacy', { state: { fromRegister: true } })}
+                >
+                  {privacyConfirmed ? 'Просмотреть' : 'Открыть'}
+                </Button>
+              </div>
             </div>
 
             <Button
               type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-primary to-[#FF8E53] hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-1 transition-all duration-300 font-heading text-base h-12"
+              disabled={loading || !canRegister}
+              className="w-full bg-gradient-to-r from-primary to-[#FF8E53] hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-1 transition-all duration-300 font-heading text-base h-12 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
             >
               {loading ? (
                 <>

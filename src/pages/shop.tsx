@@ -33,6 +33,7 @@ export function ShopPage() {
   const [paySuccess, setPaySuccess] = useState<{ orderId: number; accessToken: string; websiteUrl: string } | null>(null)
   const [cardPaymentId, setCardPaymentId] = useState<string | null>(null)
   const [cardPayMethod, setCardPayMethod] = useState<'card' | null>(null)
+  const [activeCategory, setActiveCategory] = useState<string>('Все')
 
   const getToken = () => localStorage.getItem('auth_token') || ''
 
@@ -211,8 +212,25 @@ export function ShopPage() {
               </p>
             </div>
           ) : (
+            <>
+              <div className="flex flex-wrap gap-2 mb-6">
+                {['Все', ...Array.from(new Set(products.map((p) => p.category)))].map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveCategory(cat)}
+                    className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
+                      activeCategory === cat
+                        ? 'bg-primary text-white shadow-lg shadow-primary/30'
+                        : 'bg-card/50 border border-primary/20 text-muted-foreground hover:border-primary/50 hover:text-white'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-              {products.map((product) => (
+              {products.filter((p) => activeCategory === 'Все' || p.category === activeCategory).map((product) => (
                 <div
                   key={product.id}
                   className="bg-card/50 backdrop-blur-xl border border-primary/20 rounded-xl overflow-hidden hover:border-primary/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10 group cursor-pointer"
@@ -248,6 +266,7 @@ export function ShopPage() {
                 </div>
               ))}
             </div>
+            </>
           )}
         </div>
       </div>

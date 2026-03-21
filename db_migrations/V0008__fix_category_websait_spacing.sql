@@ -1,0 +1,1 @@
+UPDATE products SET category = 'Веб-сайт' WHERE category = 'Веб - сайт';

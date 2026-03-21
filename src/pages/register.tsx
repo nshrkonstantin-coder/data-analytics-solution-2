@@ -21,6 +21,15 @@ export function RegisterPage() {
     phone: '',
   })
 
+  const handleChange = (field: string, value: string) => {
+    setConsentConfirmed(false)
+    setPrivacyConfirmed(false)
+    sessionStorage.removeItem('consentConfirmed')
+    sessionStorage.removeItem('consentDate')
+    sessionStorage.removeItem('privacyConfirmed')
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
   useEffect(() => {
     if (sessionStorage.getItem('consentConfirmed') === 'true') {
       setConsentConfirmed(true)
@@ -112,7 +121,7 @@ export function RegisterPage() {
                 type="email"
                 required
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={(e) => handleChange('email', e.target.value)}
                 placeholder="your@email.com"
                 className="bg-background/50 border-primary/30 focus:border-primary"
               />
@@ -125,7 +134,7 @@ export function RegisterPage() {
               <Input
                 type="text"
                 value={formData.full_name}
-                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                onChange={(e) => handleChange('full_name', e.target.value)}
                 placeholder="Иванов Иван Иванович"
                 className="bg-background/50 border-primary/30 focus:border-primary"
               />
@@ -138,7 +147,7 @@ export function RegisterPage() {
               <Input
                 type="tel"
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onChange={(e) => handleChange('phone', e.target.value)}
                 placeholder="+7 999 123-45-67"
                 className="bg-background/50 border-primary/30 focus:border-primary"
               />
@@ -152,7 +161,7 @@ export function RegisterPage() {
                 type="password"
                 required
                 value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                onChange={(e) => handleChange('password', e.target.value)}
                 placeholder="Минимум 6 символов"
                 className="bg-background/50 border-primary/30 focus:border-primary"
               />
@@ -166,7 +175,7 @@ export function RegisterPage() {
                 type="password"
                 required
                 value={formData.confirmPassword}
-                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                onChange={(e) => handleChange('confirmPassword', e.target.value)}
                 placeholder="Повторите пароль"
                 className="bg-background/50 border-primary/30 focus:border-primary"
               />

@@ -53,6 +53,7 @@ export function AdminProductsPage() {
   const [uploadingImage, setUploadingImage] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [previewProduct, setPreviewProduct] = useState<Product | null>(null)
   const formTopRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -506,13 +507,14 @@ export function AdminProductsPage() {
             </div>
           )}
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {products.map((product) => (
               <div
                 key={product.id}
-                className="bg-card/50 backdrop-blur-xl border border-primary/20 rounded-2xl overflow-hidden hover:border-primary/40 transition-all duration-300"
+                onClick={() => setPreviewProduct(product)}
+                className="bg-card/50 backdrop-blur-xl border border-primary/20 rounded-xl overflow-hidden hover:border-primary/50 hover:scale-105 transition-all duration-200 cursor-pointer"
               >
-                <div className="relative h-40 overflow-hidden">
+                <div className="relative h-24 overflow-hidden">
                   {product.image_url ? (
                     <img
                       src={product.image_url}
@@ -521,63 +523,95 @@ export function AdminProductsPage() {
                     />
                   ) : (
                     <div className="w-full h-full bg-primary/10 flex items-center justify-center">
-                      <Icon name="Globe" size={40} className="text-primary/40" />
+                      <Icon name="Globe" size={20} className="text-primary/40" />
                     </div>
                   )}
-                  <div className="absolute top-3 right-3 flex gap-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                  <div className="absolute top-1.5 right-1.5">
+                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
                       product.is_active
                         ? 'bg-green-500/90 text-white'
                         : 'bg-red-500/90 text-white'
                     }`}>
-                      {product.is_active ? 'Активен' : 'Неактивен'}
+                      {product.is_active ? '●' : '●'}
                     </span>
-                    {product.is_subscription && (
-                      <span className="px-3 py-1 rounded-full text-xs font-medium bg-primary/90 text-white">
-                        Подписка
-                      </span>
-                    )}
                   </div>
                 </div>
 
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-1">
-                    <h3 className="font-heading text-xl font-bold text-white flex-1">
-                      {product.title}
-                    </h3>
+                <div className="p-2">
+                  <h3 className="font-heading text-xs font-bold text-white leading-tight line-clamp-1 mb-0.5">
+                    {product.title}
+                  </h3>
+                  <p className="text-[10px] text-primary mb-1 line-clamp-1">{product.category}</p>
+                  <div className="font-heading text-sm font-bold text-primary">
+                    {product.price.toLocaleString('ru-RU')} ₽
                   </div>
+                </div>
+              </div>
+            ))}
+          </div>
 
-                  <p className="text-sm text-primary mb-2">{product.category}</p>
-                  <p className="text-muted-foreground text-sm mb-3 line-clamp-2">{product.description}</p>
+          {previewProduct && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+              onClick={() => setPreviewProduct(null)}
+            >
+              <div
+                className="bg-card border border-primary/30 rounded-2xl overflow-hidden max-w-md w-full shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="relative h-56 overflow-hidden">
+                  {previewProduct.image_url ? (
+                    <img src={previewProduct.image_url} alt={previewProduct.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-primary/10 flex items-center justify-center">
+                      <Icon name="Globe" size={48} className="text-primary/40" />
+                    </div>
+                  )}
+                  <div className="absolute top-3 right-3 flex gap-2">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${previewProduct.is_active ? 'bg-green-500/90 text-white' : 'bg-red-500/90 text-white'}`}>
+                      {previewProduct.is_active ? 'Активен' : 'Неактивен'}
+                    </span>
+                    {previewProduct.is_subscription && (
+                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-primary/90 text-white">Подписка</span>
+                    )}
+                  </div>
+                  <button onClick={() => setPreviewProduct(null)} className="absolute top-3 left-3 bg-black/50 hover:bg-black/70 text-white rounded-full w-7 h-7 flex items-center justify-center transition-colors">
+                    <Icon name="X" size={14} />
+                  </button>
+                </div>
 
-                  {product.website_url && (
+                <div className="p-5">
+                  <h3 className="font-heading text-xl font-bold text-white mb-1">{previewProduct.title}</h3>
+                  <p className="text-sm text-primary mb-2">{previewProduct.category}</p>
+                  <p className="text-muted-foreground text-sm mb-3">{previewProduct.description}</p>
+
+                  {previewProduct.website_url && (
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3 bg-background/30 rounded-lg px-3 py-2">
                       <Icon name="Globe" size={12} className="text-primary flex-shrink-0" />
-                      <span className="truncate">{product.website_url}</span>
+                      <span className="truncate">{previewProduct.website_url}</span>
                     </div>
                   )}
 
                   <div className="flex items-center gap-3 text-xs text-muted-foreground mb-4">
                     <span className="flex items-center gap-1">
                       <Icon name="Calendar" size={12} />
-                      {product.subscription_days || 30} дней
+                      {previewProduct.subscription_days || 30} дней
                     </span>
-                    {product.upgrades && product.upgrades.length > 0 && (
+                    {previewProduct.upgrades && previewProduct.upgrades.length > 0 && (
                       <span className="flex items-center gap-1">
                         <Icon name="Zap" size={12} />
-                        {product.upgrades.length} улучш.
+                        {previewProduct.upgrades.length} улучшений
                       </span>
                     )}
                   </div>
 
                   <div className="flex items-center justify-between pt-4 border-t border-primary/20">
                     <div className="font-heading text-2xl font-bold text-primary">
-                      {product.price.toLocaleString('ru-RU')} ₽
+                      {previewProduct.price.toLocaleString('ru-RU')} ₽
                     </div>
                     <Button
-                      onClick={() => handleEdit(product)}
-                      variant="outline"
-                      className="border-primary/30 hover:bg-primary/10"
+                      onClick={() => { setPreviewProduct(null); handleEdit(previewProduct) }}
+                      className="bg-gradient-to-r from-primary to-[#FF8E53]"
                       size="sm"
                     >
                       <Icon name="Edit" size={16} className="mr-2" />
@@ -586,8 +620,8 @@ export function AdminProductsPage() {
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          )}
 
           {products.length === 0 && (
             <div className="bg-card/50 backdrop-blur-xl border border-primary/20 rounded-2xl p-12 text-center">

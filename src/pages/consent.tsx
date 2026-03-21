@@ -1,26 +1,20 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import Icon from '@/components/ui/icon'
 
 export function ConsentPage() {
   const navigate = useNavigate()
-  const [date, setDate] = useState('')
   const [confirmed, setConfirmed] = useState(false)
   const [error, setError] = useState('')
 
   const handleSave = () => {
-    if (!date) {
-      setError('Укажите дату')
-      return
-    }
     if (!confirmed) {
       setError('Необходимо подтвердить согласие, поставив отметку')
       return
     }
     sessionStorage.setItem('consentConfirmed', 'true')
-    sessionStorage.setItem('consentDate', date)
+    sessionStorage.setItem('consentDate', new Date().toISOString())
     navigate('/register')
   }
 
@@ -102,18 +96,6 @@ export function ConsentPage() {
           </div>
 
           <div className="border-t border-primary/20 pt-6 space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-white mb-2">
-                Дата <span className="text-red-400">*</span>
-              </label>
-              <Input
-                type="date"
-                value={date}
-                onChange={(e) => { setDate(e.target.value); setError('') }}
-                className="bg-background/50 border-primary/30 focus:border-primary max-w-xs"
-              />
-            </div>
-
             <div
               className={`flex items-start gap-3 p-4 rounded-xl border transition-colors cursor-pointer ${
                 confirmed

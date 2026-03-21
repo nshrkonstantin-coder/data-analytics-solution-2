@@ -200,6 +200,32 @@ export function AdminSettingsPage() {
     verifyAdmin();
   }, [navigate]);
 
+  const DEFAULT_FAQ_SEED = [
+    { question: "Сколько стоит разработка?", answer: "Стоимость зависит от объёма проекта. Простой сайт-визитка с записью — от 50 000 ₽, CRM-система — от 200 000 ₽. Обсудим ваш проект и сделаем точный расчёт." },
+    { question: "Сколько времени занимает разработка?", answer: "Простой сайт — 1-2 недели, CRM-система — 1-2 месяца. Сроки зависят от сложности и количества функций." },
+    { question: "Предоставляете ли техподдержку?", answer: "Да, мы предоставляем полное сопровождение: обновления, исправления ошибок, консультации. Можно выбрать разовые работы или абонентское обслуживание." },
+    { question: "Можете интегрировать с 1C?", answer: "Да, мы интегрируем ваши приложения с 1C, платёжными системами, SMS-сервисами и другими внешними API." },
+    { question: "Где будет размещён сайт?", answer: "Мы можем разместить сайт на любом хостинге — на вашем или нашем. Также настроим домен, SSL-сертификат, резервное копирование." },
+    { question: "Что нужно для старта проекта?", answer: "Опишите вашу задачу — какой сайт или приложение нужно, какие функции. Мы подготовим техзадание, согласуем смету и сроки — и приступим к разработке." },
+  ];
+
+  const seedFaqs = async (token: string) => {
+    await Promise.all(
+      DEFAULT_FAQ_SEED.map((item, idx) =>
+        fetch(`${ADMIN_API_URL}?action=content`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            section: "faq",
+            key: `faq_seed_${idx}`,
+            content: JSON.stringify({ question: item.question, answer: item.answer, order: idx }),
+            content_type: "json",
+          }),
+        })
+      )
+    );
+  };
+
   const loadFaqs = async () => {
     setFaqLoading(true);
     const token = localStorage.getItem("auth_token");
@@ -221,6 +247,12 @@ export function AdminSettingsPage() {
         })
         .filter(Boolean)
         .sort((a: FaqItem, b: FaqItem) => a.order - b.order);
+
+      if (faqItems.length === 0 && token) {
+        await seedFaqs(token);
+        return loadFaqs();
+      }
+
       setFaqs(faqItems as FaqItem[]);
     } catch (err) {
       console.error("Ошибка загрузки FAQ:", err);

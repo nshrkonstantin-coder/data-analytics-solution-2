@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -53,6 +53,7 @@ export function AdminProductsPage() {
   const [uploadingImage, setUploadingImage] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const formTopRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const verifyAdmin = async () => {
@@ -129,6 +130,7 @@ export function AdminProductsPage() {
     setEditMode(true)
     setError('')
     setSuccess('')
+    setTimeout(() => formTopRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
   }
 
   const handleCreate = () => {
@@ -266,7 +268,7 @@ export function AdminProductsPage() {
           </div>
 
           {editMode && (
-            <div className="bg-card/50 backdrop-blur-xl border border-primary/20 rounded-2xl p-8 mb-6">
+            <div ref={formTopRef} className="bg-card/50 backdrop-blur-xl border border-primary/20 rounded-2xl p-8 mb-6">
               <h2 className="font-heading text-2xl font-bold text-white mb-6">
                 {editingProduct ? 'Редактирование продукта' : 'Новый продукт'}
               </h2>

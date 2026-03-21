@@ -23,6 +23,7 @@ import { SiteAccessPage } from "./pages/site-access";
 import { WalletPage } from "./pages/wallet";
 import { PrivacyPage } from "./pages/privacy";
 import { ConsentPage } from "./pages/consent";
+import { DocumentsPage } from "./pages/documents";
 import { PwaInstallBanner } from "./components/pwa-install-banner";
 
 const queryClient = new QueryClient();
@@ -52,6 +53,7 @@ const App = () => (
           <Route path="/site-access/:orderId" element={<SiteAccessPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/consent" element={<ConsentPage />} />
+          <Route path="/dashboard/documents" element={<DocumentsPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -184,6 +184,8 @@ export function AdminSettingsPage() {
   const [editingFaq, setEditingFaq] = useState<FaqItem | null>(null);
   const [newFaq, setNewFaq] = useState({ question: "", answer: "" });
   const [showNewFaqForm, setShowNewFaqForm] = useState(false);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const dragItemId = useRef<string | null>(null);
 
   useEffect(() => {
     const verifyAdmin = async () => {
@@ -274,6 +276,41 @@ export function AdminSettingsPage() {
     await saveFaqItem({ id, question: newFaq.question, answer: newFaq.answer, order: faqs.length });
     setNewFaq({ question: "", answer: "" });
     setShowNewFaqForm(false);
+  };
+
+  const saveOrder = async (reordered: FaqItem[]) => {
+    const token = localStorage.getItem("auth_token");
+    await Promise.all(
+      reordered.map((item, idx) =>
+        fetch(`${ADMIN_API_URL}?action=content`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            section: "faq",
+            key: item.id,
+            content: JSON.stringify({ question: item.question, answer: item.answer, order: idx }),
+            content_type: "json",
+          }),
+        })
+      )
+    );
+    setFaqs(reordered.map((item, idx) => ({ ...item, order: idx })));
+  };
+
+  const handleDragStart = (id: string) => {
+    dragItemId.current = id;
+  };
+
+  const handleDrop = async (targetId: string) => {
+    if (!dragItemId.current || dragItemId.current === targetId) return;
+    const from = faqs.findIndex((f) => f.id === dragItemId.current);
+    const to = faqs.findIndex((f) => f.id === targetId);
+    const reordered = [...faqs];
+    const [moved] = reordered.splice(from, 1);
+    reordered.splice(to, 0, moved);
+    setDragOverId(null);
+    dragItemId.current = null;
+    await saveOrder(reordered);
   };
 
   const loadSettings = async () => {
@@ -509,7 +546,19 @@ export function AdminSettingsPage() {
                     ) : (
                       <>
                         {faqs.map((faq, idx) => (
-                          <div key={faq.id} className="border border-white/10 rounded-xl overflow-hidden">
+                          <div
+                            key={faq.id}
+                            draggable={editingFaq?.id !== faq.id}
+                            onDragStart={() => handleDragStart(faq.id)}
+                            onDragOver={(e) => { e.preventDefault(); setDragOverId(faq.id); }}
+                            onDragLeave={() => setDragOverId(null)}
+                            onDrop={() => handleDrop(faq.id)}
+                            className={`border rounded-xl overflow-hidden transition-all duration-150 ${
+                              dragOverId === faq.id
+                                ? "border-primary/60 bg-primary/5 scale-[1.01]"
+                                : "border-white/10"
+                            }`}
+                          >
                             {editingFaq?.id === faq.id ? (
                               <div className="p-4 space-y-3 bg-white/5">
                                 <Input
@@ -533,8 +582,11 @@ export function AdminSettingsPage() {
                                 </div>
                               </div>
                             ) : (
-                              <div className="p-4 flex gap-3">
-                                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs text-primary font-bold mt-0.5">{idx + 1}</div>
+                              <div className="p-4 flex gap-3 cursor-grab active:cursor-grabbing">
+                                <div className="flex-shrink-0 flex flex-col items-center gap-1 pt-0.5">
+                                  <Icon name="GripVertical" size={16} className="text-muted-foreground/40" />
+                                  <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-[10px] text-primary font-bold">{idx + 1}</div>
+                                </div>
                                 <div className="flex-1 min-w-0">
                                   <p className="font-heading text-sm font-semibold text-white mb-1">{faq.question}</p>
                                   <p className="text-xs text-muted-foreground line-clamp-2">{faq.answer}</p>

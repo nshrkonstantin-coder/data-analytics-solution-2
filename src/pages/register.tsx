@@ -21,16 +21,11 @@ export function RegisterPage() {
     phone: '',
   })
 
-  const handleChange = (field: string, value: string) => {
-    setConsentConfirmed(false)
-    setPrivacyConfirmed(false)
-    sessionStorage.removeItem('consentConfirmed')
-    sessionStorage.removeItem('consentDate')
-    sessionStorage.removeItem('privacyConfirmed')
-    setFormData(prev => ({ ...prev, [field]: value }))
-  }
-
   useEffect(() => {
+    const saved = sessionStorage.getItem('registerFormData')
+    if (saved) {
+      try { setFormData(JSON.parse(saved)) } catch (_) { /* ignore */ }
+    }
     if (sessionStorage.getItem('consentConfirmed') === 'true') {
       setConsentConfirmed(true)
     }
@@ -38,6 +33,17 @@ export function RegisterPage() {
       setPrivacyConfirmed(true)
     }
   }, [])
+
+  const handleChange = (field: string, value: string) => {
+    const next = { ...formData, [field]: value }
+    setFormData(next)
+    sessionStorage.setItem('registerFormData', JSON.stringify(next))
+    setConsentConfirmed(false)
+    setPrivacyConfirmed(false)
+    sessionStorage.removeItem('consentConfirmed')
+    sessionStorage.removeItem('consentDate')
+    sessionStorage.removeItem('privacyConfirmed')
+  }
 
   const canRegister = consentConfirmed && privacyConfirmed
 
@@ -77,6 +83,7 @@ export function RegisterPage() {
       sessionStorage.removeItem('consentConfirmed')
       sessionStorage.removeItem('consentDate')
       sessionStorage.removeItem('privacyConfirmed')
+      sessionStorage.removeItem('registerFormData')
       navigate('/dashboard')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка регистрации')

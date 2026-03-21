@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import Icon from "@/components/ui/icon";
 import { authService } from "@/lib/auth";
 
@@ -159,16 +160,30 @@ const SETTING_GROUPS = [
   },
 ];
 
+interface FaqItem {
+  id: string;
+  question: string;
+  answer: string;
+  order: number;
+}
+
 export function AdminSettingsPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SETTINGS);
-  const [activeGroup, setActiveGroup] = useState(SETTING_GROUPS[0]);
+  const [activeGroup, setActiveGroup] = useState<typeof SETTING_GROUPS[0] | { id: string; name: string; icon: string; fields: never[] }>( SETTING_GROUPS[0]);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const [testingEmail, setTestingEmail] = useState(false);
   const [testEmailResult, setTestEmailResult] = useState<{ok: boolean; message: string} | null>(null);
+
+  const [faqs, setFaqs] = useState<FaqItem[]>([]);
+  const [faqLoading, setFaqLoading] = useState(false);
+  const [faqSaving, setFaqSaving] = useState(false);
+  const [editingFaq, setEditingFaq] = useState<FaqItem | null>(null);
+  const [newFaq, setNewFaq] = useState({ question: "", answer: "" });
+  const [showNewFaqForm, setShowNewFaqForm] = useState(false);
 
   useEffect(() => {
     const verifyAdmin = async () => {
@@ -177,10 +192,89 @@ export function AdminSettingsPage() {
         navigate("/login");
       } else {
         await loadSettings();
+        await loadFaqs();
       }
     };
     verifyAdmin();
   }, [navigate]);
+
+  const loadFaqs = async () => {
+    setFaqLoading(true);
+    const token = localStorage.getItem("auth_token");
+    try {
+      const response = await fetch(`${ADMIN_API_URL}?action=content`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      const contentItems: { section: string; key: string; content: string }[] = data.content || [];
+      const faqItems = contentItems
+        .filter((item) => item.section === "faq")
+        .map((item) => {
+          try {
+            const parsed = JSON.parse(item.content);
+            return { id: item.key, ...parsed };
+          } catch {
+            return null;
+          }
+        })
+        .filter(Boolean)
+        .sort((a: FaqItem, b: FaqItem) => a.order - b.order);
+      setFaqs(faqItems as FaqItem[]);
+    } catch (err) {
+      console.error("Ошибка загрузки FAQ:", err);
+    } finally {
+      setFaqLoading(false);
+    }
+  };
+
+  const saveFaqItem = async (item: FaqItem) => {
+    setFaqSaving(true);
+    const token = localStorage.getItem("auth_token");
+    try {
+      await fetch(`${ADMIN_API_URL}?action=content`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          section: "faq",
+          key: item.id,
+          content: JSON.stringify({ question: item.question, answer: item.answer, order: item.order }),
+          content_type: "json",
+        }),
+      });
+      await loadFaqs();
+      setEditingFaq(null);
+      setSuccess("FAQ сохранён");
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ошибка сохранения");
+    } finally {
+      setFaqSaving(false);
+    }
+  };
+
+  const deleteFaqItem = async (id: string) => {
+    const token = localStorage.getItem("auth_token");
+    try {
+      await fetch(`${ADMIN_API_URL}?action=content`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ section: "faq", key: id }),
+      });
+      await loadFaqs();
+      setSuccess("Вопрос удалён");
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ошибка удаления");
+    }
+  };
+
+  const addFaqItem = async () => {
+    if (!newFaq.question.trim() || !newFaq.answer.trim()) return;
+    const id = `faq_${Date.now()}`;
+    await saveFaqItem({ id, question: newFaq.question, answer: newFaq.answer, order: faqs.length });
+    setNewFaq({ question: "", answer: "" });
+    setShowNewFaqForm(false);
+  };
 
   const loadSettings = async () => {
     const token = localStorage.getItem("auth_token");
@@ -375,6 +469,17 @@ export function AdminSettingsPage() {
                     </span>
                   </button>
                 ))}
+                <button
+                  onClick={() => setActiveGroup({ id: "faq", name: "Частые вопросы", icon: "HelpCircle", fields: [] })}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${
+                    activeGroup.id === "faq"
+                      ? "bg-primary/20 text-white border border-primary/30"
+                      : "text-muted-foreground hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  <Icon name="HelpCircle" size={18} className={activeGroup.id === "faq" ? "text-primary" : ""} />
+                  <span className="font-heading text-sm font-medium">Частые вопросы</span>
+                </button>
               </div>
             </div>
 
@@ -395,90 +500,181 @@ export function AdminSettingsPage() {
                   </div>
                 </div>
 
-                <div className="space-y-5">
-                  {activeGroup.fields.map((field) => {
-                    const key = field.key as keyof SiteSettings;
-
-                    if (field.type === "toggle") {
-                      return (
-                        <div
-                          key={field.key}
-                          className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5"
-                        >
-                          <div>
-                            <p className="font-heading text-sm font-semibold text-white">
-                              {field.label}
-                            </p>
-                            {"description" in field && (
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {(field as { description: string }).description}
-                              </p>
-                            )}
-                          </div>
-                          <button
-                            onClick={() =>
-                              updateSetting(field.key, !settings[key])
-                            }
-                            className={`relative w-12 h-7 rounded-full transition-colors duration-200 ${
-                              settings[key]
-                                ? "bg-primary"
-                                : "bg-white/10"
-                            }`}
-                          >
-                            <span
-                              className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${
-                                settings[key]
-                                  ? "translate-x-6"
-                                  : "translate-x-1"
-                              }`}
-                            />
-                          </button>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div key={field.key}>
-                        <label className="block font-heading text-sm font-semibold text-white mb-2">
-                          {field.label}
-                        </label>
-                        <Input
-                          type={field.type}
-                          value={String(settings[key] || "")}
-                          onChange={(e) =>
-                            updateSetting(field.key, e.target.value)
-                          }
-                          placeholder={field.placeholder}
-                          className="bg-white/5 border-white/10 focus:border-primary/50 text-white placeholder:text-muted-foreground"
-                        />
+                {activeGroup.id === "faq" ? (
+                  <div className="space-y-4">
+                    {faqLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Icon name="Loader2" size={32} className="text-primary animate-spin" />
                       </div>
-                    );
-                  })}
-                </div>
-
-                <div className="mt-8 flex justify-end">
-                  <Button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="bg-gradient-to-r from-primary to-[#FF8E53] hover:shadow-lg hover:shadow-primary/30 font-heading border-0 px-8"
-                  >
-                    {saving ? (
-                      <>
-                        <Icon
-                          name="Loader2"
-                          size={16}
-                          className="mr-2 animate-spin"
-                        />
-                        Сохранение...
-                      </>
                     ) : (
                       <>
-                        <Icon name="Save" size={16} className="mr-2" />
-                        Сохранить
+                        {faqs.map((faq, idx) => (
+                          <div key={faq.id} className="border border-white/10 rounded-xl overflow-hidden">
+                            {editingFaq?.id === faq.id ? (
+                              <div className="p-4 space-y-3 bg-white/5">
+                                <Input
+                                  value={editingFaq.question}
+                                  onChange={(e) => setEditingFaq({ ...editingFaq, question: e.target.value })}
+                                  placeholder="Вопрос"
+                                  className="bg-white/5 border-white/10 focus:border-primary/50 text-white"
+                                />
+                                <Textarea
+                                  value={editingFaq.answer}
+                                  onChange={(e) => setEditingFaq({ ...editingFaq, answer: e.target.value })}
+                                  placeholder="Ответ"
+                                  rows={3}
+                                  className="bg-white/5 border-white/10 focus:border-primary/50 text-white resize-none"
+                                />
+                                <div className="flex gap-2">
+                                  <Button size="sm" onClick={() => saveFaqItem(editingFaq)} disabled={faqSaving} className="bg-gradient-to-r from-primary to-[#FF8E53] border-0">
+                                    {faqSaving ? <Icon name="Loader2" size={14} className="animate-spin" /> : <><Icon name="Check" size={14} className="mr-1" />Сохранить</>}
+                                  </Button>
+                                  <Button size="sm" variant="outline" onClick={() => setEditingFaq(null)} className="border-white/10 hover:bg-white/5">Отмена</Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="p-4 flex gap-3">
+                                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs text-primary font-bold mt-0.5">{idx + 1}</div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-heading text-sm font-semibold text-white mb-1">{faq.question}</p>
+                                  <p className="text-xs text-muted-foreground line-clamp-2">{faq.answer}</p>
+                                </div>
+                                <div className="flex gap-1 flex-shrink-0">
+                                  <button onClick={() => setEditingFaq(faq)} className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center transition-colors">
+                                    <Icon name="Pencil" size={14} className="text-muted-foreground hover:text-white" />
+                                  </button>
+                                  <button onClick={() => deleteFaqItem(faq.id)} className="w-8 h-8 rounded-lg hover:bg-red-500/20 flex items-center justify-center transition-colors">
+                                    <Icon name="Trash2" size={14} className="text-muted-foreground hover:text-red-400" />
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+
+                        {showNewFaqForm ? (
+                          <div className="border border-primary/30 rounded-xl p-4 space-y-3 bg-primary/5">
+                            <p className="font-heading text-sm font-semibold text-white">Новый вопрос</p>
+                            <Input
+                              value={newFaq.question}
+                              onChange={(e) => setNewFaq({ ...newFaq, question: e.target.value })}
+                              placeholder="Введите вопрос"
+                              className="bg-white/5 border-white/10 focus:border-primary/50 text-white"
+                            />
+                            <Textarea
+                              value={newFaq.answer}
+                              onChange={(e) => setNewFaq({ ...newFaq, answer: e.target.value })}
+                              placeholder="Введите ответ"
+                              rows={3}
+                              className="bg-white/5 border-white/10 focus:border-primary/50 text-white resize-none"
+                            />
+                            <div className="flex gap-2">
+                              <Button size="sm" onClick={addFaqItem} disabled={faqSaving || !newFaq.question.trim() || !newFaq.answer.trim()} className="bg-gradient-to-r from-primary to-[#FF8E53] border-0">
+                                {faqSaving ? <Icon name="Loader2" size={14} className="animate-spin" /> : <><Icon name="Plus" size={14} className="mr-1" />Добавить</>}
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={() => { setShowNewFaqForm(false); setNewFaq({ question: "", answer: "" }); }} className="border-white/10 hover:bg-white/5">Отмена</Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setShowNewFaqForm(true)}
+                            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-primary/30 text-primary hover:border-primary/60 hover:bg-primary/5 transition-all text-sm font-heading"
+                          >
+                            <Icon name="Plus" size={16} />
+                            Добавить вопрос
+                          </button>
+                        )}
                       </>
                     )}
-                  </Button>
-                </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-5">
+                      {activeGroup.fields.map((field) => {
+                        const key = field.key as keyof SiteSettings;
+
+                        if (field.type === "toggle") {
+                          return (
+                            <div
+                              key={field.key}
+                              className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5"
+                            >
+                              <div>
+                                <p className="font-heading text-sm font-semibold text-white">
+                                  {field.label}
+                                </p>
+                                {"description" in field && (
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    {(field as { description: string }).description}
+                                  </p>
+                                )}
+                              </div>
+                              <button
+                                onClick={() =>
+                                  updateSetting(field.key, !settings[key])
+                                }
+                                className={`relative w-12 h-7 rounded-full transition-colors duration-200 ${
+                                  settings[key]
+                                    ? "bg-primary"
+                                    : "bg-white/10"
+                                }`}
+                              >
+                                <span
+                                  className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${
+                                    settings[key]
+                                      ? "translate-x-6"
+                                      : "translate-x-1"
+                                  }`}
+                                />
+                              </button>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div key={field.key}>
+                            <label className="block font-heading text-sm font-semibold text-white mb-2">
+                              {field.label}
+                            </label>
+                            <Input
+                              type={field.type}
+                              value={String(settings[key] || "")}
+                              onChange={(e) =>
+                                updateSetting(field.key, e.target.value)
+                              }
+                              placeholder={field.placeholder}
+                              className="bg-white/5 border-white/10 focus:border-primary/50 text-white placeholder:text-muted-foreground"
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="mt-8 flex justify-end">
+                      <Button
+                        onClick={handleSave}
+                        disabled={saving}
+                        className="bg-gradient-to-r from-primary to-[#FF8E53] hover:shadow-lg hover:shadow-primary/30 font-heading border-0 px-8"
+                      >
+                        {saving ? (
+                          <>
+                            <Icon
+                              name="Loader2"
+                              size={16}
+                              className="mr-2 animate-spin"
+                            />
+                            Сохранение...
+                          </>
+                        ) : (
+                          <>
+                            <Icon name="Save" size={16} className="mr-2" />
+                            Сохранить
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>

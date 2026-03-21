@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import Icon from '@/components/ui/icon'
-import { authService } from '@/lib/auth'
+import { authService, User } from '@/lib/auth'
 
 const ADMIN_API_URL = 'https://functions.poehali.dev/60c925e5-07c4-4e22-acbb-7c60c1d9524d'
 
@@ -57,16 +57,24 @@ function renderPrivacyText(text: string) {
   })
 }
 
+function formatDate(iso?: string) {
+  if (!iso) return null
+  const d = new Date(iso)
+  return d.toLocaleDateString('ru-RU', { day: '2-digit', month: 'long', year: 'numeric' })
+}
+
 export function DocumentsPage() {
   const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('consent')
   const [loading, setLoading] = useState(true)
   const [privacyText, setPrivacyText] = useState(DEFAULT_PRIVACY_TEXT)
+  const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => {
     const verifyUser = async () => {
       const result = await authService.verifySession()
       if (!result.valid) navigate('/login')
+      else setUser(result.user || null)
     }
     verifyUser()
   }, [navigate])
@@ -204,6 +212,9 @@ export function DocumentsPage() {
                       <p className="text-sm text-white font-medium">Согласие подтверждено</p>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         Вы дали согласие на обработку персональных данных при регистрации
+                        {formatDate(user?.created_at) && (
+                          <span className="text-green-400 ml-1">— {formatDate(user?.created_at)}</span>
+                        )}
                       </p>
                     </div>
                   </div>
@@ -236,6 +247,9 @@ export function DocumentsPage() {
                       <p className="text-sm text-white font-medium">Политика принята</p>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         Вы приняли Политику конфиденциальности при регистрации
+                        {formatDate(user?.created_at) && (
+                          <span className="text-green-400 ml-1">— {formatDate(user?.created_at)}</span>
+                        )}
                       </p>
                     </div>
                   </div>

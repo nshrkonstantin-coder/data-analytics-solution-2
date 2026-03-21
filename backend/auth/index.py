@@ -173,7 +173,7 @@ def login_user(conn, body: dict) -> dict:
     cursor = conn.cursor(cursor_factory=RealDictCursor)
     
     cursor.execute(
-        "SELECT id, email, password_hash, full_name, phone, role FROM users WHERE email = %s",
+        "SELECT id, email, password_hash, full_name, phone, role, created_at FROM users WHERE email = %s",
         (email,)
     )
     user = cursor.fetchone()
@@ -211,7 +211,8 @@ def login_user(conn, body: dict) -> dict:
                 'email': user['email'],
                 'full_name': user['full_name'],
                 'phone': user['phone'],
-                'role': user['role']
+                'role': user['role'],
+                'created_at': user['created_at'].isoformat() if user['created_at'] else None
             }
         }),
         'isBase64Encoded': False
@@ -262,7 +263,7 @@ def verify_session(conn, event: dict) -> dict:
     
     cursor.execute(
         """
-        SELECT u.id, u.email, u.full_name, u.phone, u.role 
+        SELECT u.id, u.email, u.full_name, u.phone, u.role, u.created_at
         FROM users u
         JOIN sessions s ON u.id = s.user_id
         WHERE s.token = %s AND s.expires_at > NOW()
@@ -292,7 +293,8 @@ def verify_session(conn, event: dict) -> dict:
                 'email': user['email'],
                 'full_name': user['full_name'],
                 'phone': user['phone'],
-                'role': user['role']
+                'role': user['role'],
+                'created_at': user['created_at'].isoformat() if user['created_at'] else None
             }
         }),
         'isBase64Encoded': False

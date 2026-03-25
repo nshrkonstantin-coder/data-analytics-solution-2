@@ -64,11 +64,23 @@ def handler(event: dict, context) -> dict:
             'isBase64Encoded': False
         }
 
-    action = (event.get('queryStringParameters') or {}).get('action', '')
+    qs = event.get('queryStringParameters') or {}
+    if not qs:
+        raw_path = event.get('path', '') or event.get('rawPath', '')
+        if '?' in raw_path:
+            from urllib.parse import parse_qs
+            qs = {k: v[0] for k, v in parse_qs(raw_path.split('?', 1)[1]).items()}
+    action = qs.get('action', '')
 
     # Webhook от ЮКасса — без авторизации
     if method == 'POST' and action == 'webhook':
         return handle_webhook(event)
+
+    # Проверка соединения с ЮКасса — без авторизации
+    if method == 'GET' and action == 'ping':
+        conn = psycopg2.connect(os.environ['DATABASE_URL'])
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        return ping_yookassa(conn, cursor)
 
     # Остальные запросы требуют авторизации
     headers = event.get('headers', {})
@@ -109,6 +121,27 @@ def handler(event: dict, context) -> dict:
     cursor.close()
     conn.close()
     return _err(404, 'Endpoint not found')
+
+
+def ping_yookassa(conn, cursor) -> dict:
+    """Проверяет соединение с ЮКасса — запрашивает список платежей (limit=1)"""
+    cursor.close()
+    conn.close()
+    try:
+        result = yookassa_request('GET', '/payments?limit=1')
+        return {
+            'statusCode': 200,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'ok': True, 'shop_connected': True, 'items_count': len(result.get('items', []))}),
+            'isBase64Encoded': False
+        }
+    except Exception as e:
+        return {
+            'statusCode': 200,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'ok': False, 'shop_connected': False, 'error': str(e)}),
+            'isBase64Encoded': False
+        }
 
 
 def create_payment(conn, cursor, user: dict, body: dict) -> dict:

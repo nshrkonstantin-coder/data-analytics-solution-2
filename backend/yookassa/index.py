@@ -173,6 +173,17 @@ def create_payment(conn, cursor, user: dict, body: dict) -> dict:
         'confirmation': {'type': 'redirect', 'return_url': return_url},
         'capture': True,
         'description': description,
+        'receipt': {
+            'customer': {'email': user['email']},
+            'items': [{
+                'description': 'Пополнение баланса',
+                'quantity': '1.00',
+                'amount': {'value': f'{amount:.2f}', 'currency': 'RUB'},
+                'vat_code': 1,
+                'payment_mode': 'full_payment',
+                'payment_subject': 'service'
+            }]
+        },
         'metadata': {
             'type': 'topup',
             'user_id': user['id'],
@@ -244,6 +255,17 @@ def buy_product_with_card(conn, cursor, user: dict, body: dict) -> dict:
         'confirmation': {'type': 'redirect', 'return_url': return_url},
         'capture': True,
         'description': description,
+        'receipt': {
+            'customer': {'email': user['email']},
+            'items': [{
+                'description': product['title'][:128],
+                'quantity': '1.00',
+                'amount': {'value': f'{amount:.2f}', 'currency': 'RUB'},
+                'vat_code': 1,
+                'payment_mode': 'full_payment',
+                'payment_subject': 'service'
+            }]
+        },
         'metadata': {
             'type': 'product',
             'user_id': user['id'],

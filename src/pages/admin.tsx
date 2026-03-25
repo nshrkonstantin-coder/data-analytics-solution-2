@@ -46,8 +46,8 @@ export function AdminPage() {
         },
       })
       const data = await response.json()
-      if (data.stats) {
-        setStats(data.stats)
+      if (data.users !== undefined) {
+        setStats(data)
       }
     } catch (error) {
       console.error('Ошибка загрузки статистики:', error)

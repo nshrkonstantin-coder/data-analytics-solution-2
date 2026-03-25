@@ -1,6 +1,7 @@
 import json
 import os
 import uuid
+import secrets
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import urllib.request
@@ -30,8 +31,8 @@ def send_order_notification(order_id, product_title, amount, user_name, user_ema
 
 def yookassa_request(method: str, path: str, body: dict = None) -> dict:
     """Выполняет запрос к API ЮКасса"""
-    shop_id = os.environ['YOOKASSA_SHOP_ID']
-    secret_key = os.environ['YOOKASSA_SECRET_KEY']
+    shop_id = os.environ['YUKASSA_SHOP_ID']
+    secret_key = os.environ['YUKASSA_SECRET_KEY']
     credentials = base64.b64encode(f'{shop_id}:{secret_key}'.encode()).decode()
 
     url = f'https://api.yookassa.ru/v3{path}'

@@ -43,8 +43,13 @@ def yookassa_request(method: str, path: str, body: dict = None) -> dict:
     if body:
         req.add_header('Idempotence-Key', str(uuid.uuid4()))
 
-    with urllib.request.urlopen(req) as resp:
-        return json.loads(resp.read().decode('utf-8'))
+    try:
+        with urllib.request.urlopen(req) as resp:
+            return json.loads(resp.read().decode('utf-8'))
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode('utf-8')
+        print(f'[YOOKASSA ERROR] {e.code}: {error_body}')
+        raise
 
 
 def handler(event: dict, context) -> dict:

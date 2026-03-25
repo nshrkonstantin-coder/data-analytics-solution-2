@@ -312,7 +312,7 @@ def check_status(conn, cursor, user_id: int, payment_id: str) -> dict:
                o.id as order_id, o.payment_confirmed, o.access_token, o.expires_at,
                p.website_url
         FROM {SCHEMA}.yookassa_payments yp
-        LEFT JOIN {SCHEMA}.orders o ON (yp.user_id = o.user_id AND yp.description LIKE '%' || p.title || '%')
+        LEFT JOIN {SCHEMA}.orders o ON yp.user_id = o.user_id
         LEFT JOIN {SCHEMA}.products p ON o.product_id = p.id
         WHERE yp.payment_id = %s AND yp.user_id = %s
     """, (payment_id, user_id))

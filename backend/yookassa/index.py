@@ -1,7 +1,7 @@
 import json
 import os
 import uuid
-import secrets
+import secrets  # noqa
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import urllib.request

@@ -457,7 +457,7 @@ def handle_webhook(event: dict) -> dict:
 
         cursor.execute(f"""
             INSERT INTO {SCHEMA}.wallet_transactions (wallet_id, amount, type, description)
-            VALUES (%s, %s, 'credit', %s)
+            VALUES (%s, %s, 'deposit', %s)
         """, (wallet_id, amount, f'Пополнение через ЮКасса (платёж {payment_id[:8]}...)'))
 
         conn.commit()

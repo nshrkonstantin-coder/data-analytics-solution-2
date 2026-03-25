@@ -277,12 +277,12 @@ def buy_product_with_card(conn, cursor, user: dict, body: dict) -> dict:
     payment_id = payment['id']
     confirmation_url = payment['confirmation']['confirmation_url']
 
-    # Сохраняем платёж, wallet_id=NULL для продуктовых платежей
+    # Сохраняем платёж, order_id для продуктовых платежей
     cursor.execute(f"""
         INSERT INTO {SCHEMA}.yookassa_payments
-            (user_id, wallet_id, payment_id, amount, status, description, confirmation_url)
-        VALUES (%s, NULL, %s, %s, 'pending', %s, %s)
-    """, (user['id'], payment_id, amount, description, confirmation_url))
+            (user_id, payment_id, amount, status, description, confirmation_url, order_id)
+        VALUES (%s, %s, %s, 'pending', %s, %s, %s)
+    """, (user['id'], payment_id, amount, description, confirmation_url, order_id))
 
     conn.commit()
     cursor.close()

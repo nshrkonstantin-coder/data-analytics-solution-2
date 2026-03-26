@@ -749,6 +749,17 @@ export function OrdersPage() {
                             <p className="text-muted-foreground text-xs mb-3">
                               Отсканируйте QR-код в приложении банка — реквизиты заполнятся автоматически. Поддерживается СБПэй, Сбербанк, Тинькофф и другие.
                             </p>
+                            {createdOrderId ? (
+                              <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 mb-3">
+                                <p className="text-xs text-muted-foreground mb-1">Укажите в назначении платежа:</p>
+                                <p className="text-white font-mono font-bold text-sm">Оплата по Заказу №{createdOrderId}</p>
+                              </div>
+                            ) : (
+                              <div className="bg-background/30 border border-primary/10 rounded-lg p-3 mb-3">
+                                <p className="text-xs text-muted-foreground mb-1">После создания заказа укажите в назначении:</p>
+                                <p className="text-muted-foreground font-mono text-sm italic">Оплата по Заказу №...</p>
+                              </div>
+                            )}
                             <Link
                               to="/requisites"
                               target="_blank"

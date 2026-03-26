@@ -6,7 +6,7 @@
       "path": "/?action=login",
       "body": {
         "email": "admin@maxisoftzab.ru",
-        "password": "admin123"
+        "password": "Qweds123"
       },
       "expectedStatus": 200,
       "expectedBody": {

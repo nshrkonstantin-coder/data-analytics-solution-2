@@ -121,7 +121,7 @@ export function AdminUsersPage() {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          id: resetPasswordUser.id,
+          user_id: resetPasswordUser.id,
           new_password: newPassword,
         }),
       })

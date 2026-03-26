@@ -51,6 +51,8 @@ def handler(event: dict, context) -> dict:
                 return logout_user(conn, event)
             elif path == 'change-password':
                 return change_password(conn, event, body)
+            elif path == 'forgot-password':
+                return forgot_password(conn, body)
         
         elif method == 'GET':
             if path == 'verify':
@@ -381,5 +383,59 @@ def change_password(conn, event: dict, body: dict) -> dict:
         'statusCode': 200,
         'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
         'body': json.dumps({'message': 'Пароль успешно изменен'}),
+        'isBase64Encoded': False
+    }
+
+
+def forgot_password(conn, body: dict) -> dict:
+    import string
+    import random
+    email = body.get('email', '').strip().lower()
+
+    if not email:
+        return {
+            'statusCode': 400,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'Email обязателен'}),
+            'isBase64Encoded': False
+        }
+
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    cursor.execute("SELECT id, email, full_name FROM t_p13776910_data_analytics_solut.users WHERE email = %s", (email,))
+    user = cursor.fetchone()
+
+    if not user:
+        cursor.close()
+        conn.close()
+        return {
+            'statusCode': 200,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'message': 'Если этот email зарегистрирован, вы получите временный пароль'}),
+            'isBase64Encoded': False
+        }
+
+    chars = string.ascii_letters + string.digits
+    temp_password = ''.join(random.choices(chars, k=10))
+    password_hash = bcrypt.hashpw(temp_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+    cursor.execute(
+        "UPDATE t_p13776910_data_analytics_solut.users SET password_hash = %s, updated_at = NOW() WHERE id = %s",
+        (password_hash, user['id'])
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    send_notify({
+        'type': 'password_reset',
+        'user_email': user['email'],
+        'user_name': user['full_name'] or '',
+        'temp_password': temp_password,
+    })
+
+    return {
+        'statusCode': 200,
+        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+        'body': json.dumps({'message': 'Если этот email зарегистрирован, вы получите временный пароль'}),
         'isBase64Encoded': False
     }

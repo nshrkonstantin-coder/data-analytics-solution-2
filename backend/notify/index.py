@@ -34,6 +34,8 @@ def handler(event: dict, context) -> dict:
         return notify_order_paid(body)
     if event_type == 'new_register':
         return notify_new_register(body)
+    if event_type == 'password_reset':
+        return notify_password_reset(body)
     if event_type == 'test':
         return notify_test()
 
@@ -126,6 +128,39 @@ def notify_new_register(data: dict) -> dict:
     return _resp(200, {'ok': True})
 
 
+def notify_password_reset(data: dict) -> dict:
+    """Отправляет письмо пользователю с временным паролем"""
+    user_email = data.get('user_email', '')
+    user_name = data.get('user_name') or 'Пользователь'
+    temp_password = data.get('temp_password', '')
+
+    subject = 'Сброс пароля — MAXISOFTZAB'
+
+    html = f"""
+<html><body style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
+  <div style="background: #1a1a2e; padding: 24px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: #fff; margin: 0; font-size: 22px;">MAXISOFTZAB</h1>
+    <p style="color: #aaa; margin: 4px 0 0;">Восстановление доступа</p>
+  </div>
+  <div style="border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 12px 12px; padding: 24px;">
+    <h2 style="color: #e85d04; margin-top: 0;">Ваш временный пароль</h2>
+    <p>Здравствуйте, {user_name}!</p>
+    <p>Вы запросили сброс пароля. Ваш временный пароль:</p>
+    <div style="background: #f5f5f5; border: 2px dashed #e85d04; border-radius: 8px; padding: 16px; text-align: center; margin: 20px 0;">
+      <span style="font-size: 24px; font-weight: bold; letter-spacing: 4px; color: #1a1a2e; font-family: monospace;">{temp_password}</span>
+    </div>
+    <p style="color: #666;">После входа рекомендуем сменить пароль в настройках личного кабинета.</p>
+    <div style="margin-top: 20px; padding: 12px; background: #fff3e0; border-left: 4px solid #e85d04; border-radius: 4px; font-size: 13px; color: #666;">
+      Если вы не запрашивали сброс пароля — просто проигнорируйте это письмо.
+    </div>
+  </div>
+</body></html>
+"""
+
+    send_email_to(subject, html, user_email)
+    return _resp(200, {'ok': True})
+
+
 def notify_test() -> dict:
     """Тестовая отправка письма для проверки SMTP-настроек"""
     admin_email = os.environ.get('ADMIN_EMAIL', '')
@@ -151,31 +186,35 @@ def notify_test() -> dict:
 
 
 def send_email(subject: str, html_body: str):
+    admin_email = os.environ.get('ADMIN_EMAIL', '')
+    send_email_to(subject, html_body, admin_email)
+
+
+def send_email_to(subject: str, html_body: str, to_email: str):
     smtp_host = os.environ.get('SMTP_HOST', '')
     smtp_port = int(os.environ.get('SMTP_PORT', '465'))
     smtp_user = os.environ.get('SMTP_USER', '')
     smtp_password = os.environ.get('SMTP_PASSWORD', '')
-    admin_email = os.environ.get('ADMIN_EMAIL', '')
 
-    if not all([smtp_host, smtp_user, smtp_password, admin_email]):
+    if not all([smtp_host, smtp_user, smtp_password, to_email]):
         return
 
     msg = MIMEMultipart('alternative')
     msg['Subject'] = subject
     msg['From'] = f'MAXISOFTZAB <{smtp_user}>'
-    msg['To'] = admin_email
+    msg['To'] = to_email
     msg.attach(MIMEText(html_body, 'html', 'utf-8'))
 
     context = ssl.create_default_context()
     if smtp_port == 465:
         with smtplib.SMTP_SSL(smtp_host, smtp_port, context=context) as server:
             server.login(smtp_user, smtp_password)
-            server.sendmail(smtp_user, admin_email, msg.as_string())
+            server.sendmail(smtp_user, to_email, msg.as_string())
     else:
         with smtplib.SMTP(smtp_host, smtp_port) as server:
             server.starttls(context=context)
             server.login(smtp_user, smtp_password)
-            server.sendmail(smtp_user, admin_email, msg.as_string())
+            server.sendmail(smtp_user, to_email, msg.as_string())
 
 
 def _resp(code: int, body: dict) -> dict:

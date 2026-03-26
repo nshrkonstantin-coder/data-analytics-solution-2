@@ -60,11 +60,29 @@ export function RequisitesPage() {
               ))}
             </div>
 
-            <div className="mt-8 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-5">
-              <p className="text-yellow-400 text-sm flex items-start gap-2">
-                <Icon name="Info" size={16} className="flex-shrink-0 mt-0.5" />
-                В назначении платежа обязательно укажите номер вашего заказа, например: <strong>«Оплата по Заказу №123»</strong>
-              </p>
+            <div className="mt-8 bg-card/50 backdrop-blur-xl border border-primary/20 rounded-2xl p-6">
+              <div className="flex flex-col sm:flex-row items-center gap-6">
+                <div className="flex-shrink-0">
+                  <img
+                    src="https://cdn.poehali.dev/files/26b1c043-7d1b-44ff-a364-1ccbca26a7d8.png"
+                    alt="QR-код для оплаты"
+                    className="w-44 h-44 rounded-xl object-contain bg-white p-1"
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Icon name="QrCode" size={20} className="text-primary" />
+                    <h3 className="font-heading text-lg font-bold text-white">Оплата по QR-коду</h3>
+                  </div>
+                  <p className="text-muted-foreground font-body text-sm mb-3">
+                    Отсканируйте QR-код в приложении вашего банка — все реквизиты заполнятся автоматически. Поддерживается в большинстве банков России (СБПэй, Сбербанк, Тинькофф и другие).
+                  </p>
+                  <p className="text-yellow-400 text-xs flex items-start gap-2">
+                    <Icon name="Info" size={14} className="flex-shrink-0 mt-0.5" />
+                    Не забудьте указать в комментарии к платежу номер вашего заказа, например: <strong>«Оплата по Заказу №123»</strong>
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>

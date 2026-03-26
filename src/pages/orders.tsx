@@ -735,14 +735,30 @@ export function OrdersPage() {
                             </div>
                           ))}
                         </div>
-                        <Link
-                          to="/requisites"
-                          target="_blank"
-                          className="inline-flex items-center gap-2 mt-4 text-primary text-sm hover:underline"
-                        >
-                          <Icon name="ExternalLink" size={14} />
-                          Полная карточка предприятия
-                        </Link>
+                        <div className="mt-5 pt-4 border-t border-primary/10 flex flex-col sm:flex-row items-center gap-4">
+                          <img
+                            src="https://cdn.poehali.dev/files/26b1c043-7d1b-44ff-a364-1ccbca26a7d8.png"
+                            alt="QR-код для оплаты"
+                            className="w-36 h-36 rounded-xl object-contain bg-white p-1 flex-shrink-0"
+                          />
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <Icon name="QrCode" size={16} className="text-primary" />
+                              <span className="text-white text-sm font-medium">Оплата по QR-коду</span>
+                            </div>
+                            <p className="text-muted-foreground text-xs mb-3">
+                              Отсканируйте QR-код в приложении банка — реквизиты заполнятся автоматически. Поддерживается СБПэй, Сбербанк, Тинькофф и другие.
+                            </p>
+                            <Link
+                              to="/requisites"
+                              target="_blank"
+                              className="inline-flex items-center gap-2 text-primary text-xs hover:underline"
+                            >
+                              <Icon name="ExternalLink" size={12} />
+                              Полная карточка предприятия
+                            </Link>
+                          </div>
+                        </div>
                       </div>
 
                       <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-4">

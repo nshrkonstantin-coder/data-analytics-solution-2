@@ -141,6 +141,28 @@ export const authService = {
     }
   },
 
+  async updateProfile(full_name: string, phone: string): Promise<void> {
+    const token = localStorage.getItem('auth_token')
+    if (!token) throw new Error('Требуется авторизация')
+
+    const response = await fetch(`${AUTH_API_URL}?action=update-profile`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ full_name, phone }),
+    })
+
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.error || 'Ошибка обновления профиля')
+
+    const user = this.getUser()
+    if (user) {
+      localStorage.setItem('user', JSON.stringify({ ...user, full_name, phone }))
+    }
+  },
+
   getUser(): User | null {
     const userStr = localStorage.getItem('user')
     return userStr ? JSON.parse(userStr) : null

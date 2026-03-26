@@ -9,15 +9,17 @@ export function ProfilePage() {
   const navigate = useNavigate()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+
+  const [profileData, setProfileData] = useState({ full_name: '', phone: '' })
+  const [profileEditing, setProfileEditing] = useState(false)
+  const [profileSaving, setProfileSaving] = useState(false)
+
   const [passwordMode, setPasswordMode] = useState(false)
-  const [passwordData, setPasswordData] = useState({
-    old_password: '',
-    new_password: '',
-    confirm_password: '',
-  })
+  const [passwordData, setPasswordData] = useState({ old_password: '', new_password: '', confirm_password: '' })
+  const [passwordSaving, setPasswordSaving] = useState(false)
+
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     const verifyUser = async () => {
@@ -26,12 +28,32 @@ export function ProfilePage() {
         navigate('/login')
       } else {
         setUser(result.user || null)
+        setProfileData({
+          full_name: result.user?.full_name || '',
+          phone: result.user?.phone || '',
+        })
       }
       setLoading(false)
     }
-
     verifyUser()
   }, [navigate])
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setSuccess('')
+    setProfileSaving(true)
+    try {
+      await authService.updateProfile(profileData.full_name, profileData.phone)
+      setUser(prev => prev ? { ...prev, ...profileData } : prev)
+      setSuccess('Данные профиля обновлены')
+      setProfileEditing(false)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ошибка обновления')
+    } finally {
+      setProfileSaving(false)
+    }
+  }
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,23 +64,21 @@ export function ProfilePage() {
       setError('Новые пароли не совпадают')
       return
     }
-
     if (passwordData.new_password.length < 6) {
       setError('Новый пароль должен быть минимум 6 символов')
       return
     }
 
-    setSaving(true)
-
+    setPasswordSaving(true)
     try {
       await authService.changePassword(passwordData.old_password, passwordData.new_password)
-      setSuccess('Пароль успешно изменен')
+      setSuccess('Пароль успешно изменён')
       setPasswordData({ old_password: '', new_password: '', confirm_password: '' })
       setPasswordMode(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка смены пароля')
     } finally {
-      setSaving(false)
+      setPasswordSaving(false)
     }
   }
 
@@ -77,11 +97,7 @@ export function ProfilePage() {
           <Link to="/dashboard" className="font-heading text-2xl font-extrabold text-white">
             MAXI<span className="text-primary">SOFT</span><span className="text-secondary">ZAB</span>
           </Link>
-          <Button
-            onClick={() => navigate('/dashboard')}
-            variant="outline"
-            className="border-primary/30 hover:bg-primary/10"
-          >
+          <Button onClick={() => navigate('/dashboard')} variant="outline" className="border-primary/30 hover:bg-primary/10">
             <Icon name="ArrowLeft" size={18} className="mr-2" />
             Назад
           </Button>
@@ -91,12 +107,8 @@ export function ProfilePage() {
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-2xl mx-auto">
           <div className="bg-card/50 backdrop-blur-xl border border-primary/20 rounded-2xl p-8 mb-6">
-            <h1 className="font-heading text-3xl font-bold text-white mb-2">
-              Личные данные
-            </h1>
-            <p className="text-muted-foreground">
-              Управление профилем и настройками безопасности
-            </p>
+            <h1 className="font-heading text-3xl font-bold text-white mb-2">Личные данные</h1>
+            <p className="text-muted-foreground">Управление профилем и настройками безопасности</p>
           </div>
 
           {success && (
@@ -106,92 +118,128 @@ export function ProfilePage() {
             </div>
           )}
 
-          <div className="bg-card/50 backdrop-blur-xl border border-primary/20 rounded-2xl p-8 mb-6">
-            <h2 className="font-heading text-xl font-bold text-white mb-6">
-              Информация о профиле
-            </h2>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-2">
-                  Email
-                </label>
-                <Input
-                  type="email"
-                  value={user?.email || ''}
-                  disabled
-                  className="bg-background/30 border-primary/20 text-white"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Для изменения email обратитесь в поддержку
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-2">
-                  ФИО
-                </label>
-                <Input
-                  type="text"
-                  value={user?.full_name || ''}
-                  disabled
-                  className="bg-background/30 border-primary/20 text-white"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Для изменения ФИО обратитесь в поддержку
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-2">
-                  Телефон
-                </label>
-                <Input
-                  type="tel"
-                  value={user?.phone || ''}
-                  disabled
-                  className="bg-background/30 border-primary/20 text-white"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Для изменения телефона обратитесь в поддержку
-                </p>
-              </div>
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6 flex items-start gap-2">
+              <Icon name="AlertCircle" size={20} className="text-red-500 mt-0.5 flex-shrink-0" />
+              <p className="text-red-500 text-sm">{error}</p>
             </div>
+          )}
+
+          <div className="bg-card/50 backdrop-blur-xl border border-primary/20 rounded-2xl p-8 mb-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-heading text-xl font-bold text-white">Информация о профиле</h2>
+              {!profileEditing && (
+                <Button
+                  onClick={() => { setProfileEditing(true); setError(''); setSuccess('') }}
+                  variant="outline"
+                  size="sm"
+                  className="border-primary/30 hover:bg-primary/10"
+                >
+                  <Icon name="Pencil" size={16} className="mr-2" />
+                  Редактировать
+                </Button>
+              )}
+            </div>
+
+            {!profileEditing ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">Email</label>
+                  <Input
+                    type="email"
+                    value={user?.email || ''}
+                    disabled
+                    className="bg-background/30 border-primary/20 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">ФИО</label>
+                  <Input
+                    type="text"
+                    value={user?.full_name || ''}
+                    disabled
+                    className="bg-background/30 border-primary/20 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">Телефон</label>
+                  <Input
+                    type="tel"
+                    value={user?.phone || ''}
+                    disabled
+                    className="bg-background/30 border-primary/20 text-white"
+                  />
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleSaveProfile} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">Email</label>
+                  <Input
+                    type="email"
+                    value={user?.email || ''}
+                    disabled
+                    className="bg-background/30 border-primary/20 text-white"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Email изменить нельзя</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-white mb-2">ФИО</label>
+                  <Input
+                    type="text"
+                    value={profileData.full_name}
+                    onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
+                    placeholder="Иванов Иван Иванович"
+                    className="bg-background/50 border-primary/30 focus:border-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-white mb-2">Телефон</label>
+                  <Input
+                    type="tel"
+                    value={profileData.phone}
+                    onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                    placeholder="+7 (999) 000-00-00"
+                    className="bg-background/50 border-primary/30 focus:border-primary"
+                  />
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <Button type="submit" disabled={profileSaving} className="bg-gradient-to-r from-primary to-[#FF8E53] hover:shadow-lg hover:shadow-primary/30">
+                    {profileSaving ? <><Icon name="Loader2" size={16} className="animate-spin mr-2" />Сохранение...</> : 'Сохранить'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => { setProfileEditing(false); setError('') }}
+                    className="border-primary/30 hover:bg-primary/10"
+                  >
+                    Отмена
+                  </Button>
+                </div>
+              </form>
+            )}
           </div>
 
           {user?.role === 'admin' && (
             <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/30 rounded-2xl p-8 mb-6">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Icon name="Shield" size={24} className="text-purple-400" />
-                    <h2 className="font-heading text-xl font-bold text-white">
-                      Доступ администратора
-                    </h2>
-                  </div>
-                  <p className="text-muted-foreground mb-4">
-                    У вас есть права администратора системы
-                  </p>
-                  <Button
-                    onClick={() => navigate('/admin')}
-                    className="bg-gradient-to-r from-purple-500 to-blue-500 hover:shadow-lg hover:shadow-purple-500/30"
-                  >
-                    <Icon name="Settings" size={18} className="mr-2" />
-                    Панель администратора
-                  </Button>
-                </div>
+              <div className="flex items-center gap-2 mb-2">
+                <Icon name="Shield" size={24} className="text-purple-400" />
+                <h2 className="font-heading text-xl font-bold text-white">Доступ администратора</h2>
               </div>
+              <p className="text-muted-foreground mb-4">У вас есть права администратора системы</p>
+              <Button onClick={() => navigate('/admin')} className="bg-gradient-to-r from-purple-500 to-blue-500 hover:shadow-lg hover:shadow-purple-500/30">
+                <Icon name="Settings" size={18} className="mr-2" />
+                Панель администратора
+              </Button>
             </div>
           )}
 
           <div className="bg-card/50 backdrop-blur-xl border border-primary/20 rounded-2xl p-8">
-            <h2 className="font-heading text-xl font-bold text-white mb-6">
-              Безопасность
-            </h2>
+            <h2 className="font-heading text-xl font-bold text-white mb-6">Безопасность</h2>
 
             {!passwordMode ? (
               <Button
-                onClick={() => setPasswordMode(true)}
+                onClick={() => { setPasswordMode(true); setError(''); setSuccess('') }}
                 className="bg-gradient-to-r from-primary to-[#FF8E53] hover:shadow-lg hover:shadow-primary/30"
               >
                 <Icon name="Lock" size={18} className="mr-2" />
@@ -199,17 +247,8 @@ export function ProfilePage() {
               </Button>
             ) : (
               <form onSubmit={handleChangePassword} className="space-y-4">
-                {error && (
-                  <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 flex items-start gap-2">
-                    <Icon name="AlertCircle" size={20} className="text-red-500 mt-0.5 flex-shrink-0" />
-                    <p className="text-red-500 text-sm">{error}</p>
-                  </div>
-                )}
-
                 <div>
-                  <label className="block text-sm font-medium text-white mb-2">
-                    Текущий пароль
-                  </label>
+                  <label className="block text-sm font-medium text-white mb-2">Текущий пароль</label>
                   <Input
                     type="password"
                     required
@@ -218,11 +257,8 @@ export function ProfilePage() {
                     className="bg-background/50 border-primary/30 focus:border-primary"
                   />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-white mb-2">
-                    Новый пароль
-                  </label>
+                  <label className="block text-sm font-medium text-white mb-2">Новый пароль</label>
                   <Input
                     type="password"
                     required
@@ -232,45 +268,25 @@ export function ProfilePage() {
                     className="bg-background/50 border-primary/30 focus:border-primary"
                   />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-white mb-2">
-                    Подтвердите новый пароль
-                  </label>
+                  <label className="block text-sm font-medium text-white mb-2">Подтверждение нового пароля</label>
                   <Input
                     type="password"
                     required
                     value={passwordData.confirm_password}
                     onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })}
-                    placeholder="Повторите новый пароль"
                     className="bg-background/50 border-primary/30 focus:border-primary"
                   />
                 </div>
-
-                <div className="flex gap-3">
-                  <Button
-                    type="submit"
-                    disabled={saving}
-                    className="bg-gradient-to-r from-primary to-[#FF8E53] hover:shadow-lg hover:shadow-primary/30"
-                  >
-                    {saving ? (
-                      <>
-                        <Icon name="Loader2" size={18} className="animate-spin mr-2" />
-                        Сохранение...
-                      </>
-                    ) : (
-                      'Сохранить'
-                    )}
+                <div className="flex gap-3 pt-2">
+                  <Button type="submit" disabled={passwordSaving} className="bg-gradient-to-r from-primary to-[#FF8E53] hover:shadow-lg hover:shadow-primary/30">
+                    {passwordSaving ? <><Icon name="Loader2" size={16} className="animate-spin mr-2" />Сохранение...</> : 'Изменить пароль'}
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => {
-                      setPasswordMode(false)
-                      setPasswordData({ old_password: '', new_password: '', confirm_password: '' })
-                      setError('')
-                    }}
-                    className="border-primary/30"
+                    onClick={() => { setPasswordMode(false); setPasswordData({ old_password: '', new_password: '', confirm_password: '' }); setError('') }}
+                    className="border-primary/30 hover:bg-primary/10"
                   >
                     Отмена
                   </Button>

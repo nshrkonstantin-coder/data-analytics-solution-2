@@ -53,6 +53,8 @@ def handler(event: dict, context) -> dict:
                 return change_password(conn, event, body)
             elif path == 'forgot-password':
                 return forgot_password(conn, body)
+            elif path == 'update-profile':
+                return update_profile(conn, event, body)
         
         elif method == 'GET':
             if path == 'verify':
@@ -437,5 +439,58 @@ def forgot_password(conn, body: dict) -> dict:
         'statusCode': 200,
         'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
         'body': json.dumps({'message': 'Если этот email зарегистрирован, вы получите временный пароль'}),
+        'isBase64Encoded': False
+    }
+
+
+def update_profile(conn, event: dict, body: dict) -> dict:
+    headers = event.get('headers', {})
+    token = headers.get('x-authorization', '') or headers.get('X-Authorization', '')
+    token = token.replace('Bearer ', '')
+
+    if not token:
+        return {
+            'statusCode': 401,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'Требуется авторизация'}),
+            'isBase64Encoded': False
+        }
+
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    cursor.execute(
+        """SELECT u.id FROM t_p13776910_data_analytics_solut.users u
+           JOIN t_p13776910_data_analytics_solut.sessions s ON u.id = s.user_id
+           WHERE s.token = %s AND s.expires_at > NOW()""",
+        (token,)
+    )
+    user = cursor.fetchone()
+
+    if not user:
+        cursor.close()
+        conn.close()
+        return {
+            'statusCode': 401,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'Сессия недействительна'}),
+            'isBase64Encoded': False
+        }
+
+    full_name = body.get('full_name', '').strip()
+    phone = body.get('phone', '').strip()
+
+    cursor.execute(
+        """UPDATE t_p13776910_data_analytics_solut.users
+           SET full_name = %s, phone = %s, updated_at = NOW()
+           WHERE id = %s""",
+        (full_name, phone, user['id'])
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return {
+        'statusCode': 200,
+        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+        'body': json.dumps({'message': 'Профиль обновлён'}),
         'isBase64Encoded': False
     }

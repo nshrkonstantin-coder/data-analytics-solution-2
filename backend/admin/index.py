@@ -453,9 +453,10 @@ def update_user(conn, body: dict) -> dict:
     cursor = conn.cursor()
     cursor.execute(f"""
         UPDATE {SCHEMA}.users 
-        SET full_name = %s, phone = %s, role = %s, updated_at = NOW()
+        SET email = %s, full_name = %s, phone = %s, role = %s, updated_at = NOW()
         WHERE id = %s
     """, (
+        body.get('email'),
         body.get('full_name'),
         body.get('phone'),
         body.get('role', 'user'),

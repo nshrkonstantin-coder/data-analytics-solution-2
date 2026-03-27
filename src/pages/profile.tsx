@@ -126,7 +126,7 @@ export function ProfilePage() {
           )}
 
           <div className="bg-card/50 backdrop-blur-xl border border-primary/20 rounded-2xl p-8 mb-6">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-4">
               <h2 className="font-heading text-xl font-bold text-white">Информация о профиле</h2>
               {!profileEditing && (
                 <Button
@@ -139,6 +139,16 @@ export function ProfilePage() {
                   Редактировать
                 </Button>
               )}
+            </div>
+
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 mb-6 flex items-start gap-3">
+              <Icon name="Lock" size={18} className="text-amber-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-amber-400 text-sm font-medium mb-0.5">Email привязан навсегда</p>
+                <p className="text-amber-400/70 text-xs leading-relaxed">
+                  Email указывается один раз при регистрации и не может быть изменён — он используется для доступа ко всем вашим продуктам и сервисам. Даже служба поддержки не может его сменить.
+                </p>
+              </div>
             </div>
 
             {!profileEditing ? (

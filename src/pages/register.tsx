@@ -132,6 +132,12 @@ export function RegisterPage() {
                 placeholder="your@email.com"
                 className="bg-background/50 border-primary/30 focus:border-primary"
               />
+              <div className="mt-2 flex items-start gap-2 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+                <Icon name="Lock" size={13} className="text-amber-400 flex-shrink-0 mt-0.5" />
+                <p className="text-amber-400/80 text-xs leading-relaxed">
+                  Email привязывается навсегда и не подлежит изменению — он используется для доступа ко всем вашим продуктам. Выберите актуальный адрес.
+                </p>
+              </div>
             </div>
 
             <div>

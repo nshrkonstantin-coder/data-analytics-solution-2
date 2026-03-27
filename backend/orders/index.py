@@ -586,6 +586,8 @@ def delete_order(conn, user_id: int, body: dict) -> dict:
             'isBase64Encoded': False
         }
 
+    cursor.execute("DELETE FROM yookassa_payments WHERE order_id = %s", (order_id,))
+    cursor.execute("DELETE FROM yookassa_payments_backup WHERE order_id = %s", (order_id,))
     cursor.execute("DELETE FROM orders WHERE id = %s AND user_id = %s", (order_id, user_id))
     conn.commit()
     cursor.close()

@@ -29,6 +29,10 @@ export function AdminUsersPage() {
   const [resetPasswordUser, setResetPasswordUser] = useState<User | null>(null)
   const [newPassword, setNewPassword] = useState('')
   const [resettingPassword, setResettingPassword] = useState(false)
+  const [topupUser, setTopupUser] = useState<User | null>(null)
+  const [topupAmount, setTopupAmount] = useState('')
+  const [topupDescription, setTopupDescription] = useState('')
+  const [toppingUp, setToppingUp] = useState(false)
 
   useEffect(() => {
     const verifyAdmin = async () => {
@@ -139,6 +143,44 @@ export function AdminUsersPage() {
       setError(err instanceof Error ? err.message : 'Ошибка сброса пароля')
     } finally {
       setResettingPassword(false)
+    }
+  }
+
+  const handleTopupWallet = async () => {
+    if (!topupUser || !topupAmount) return
+    const amount = parseFloat(topupAmount)
+    if (isNaN(amount) || amount <= 0) {
+      setError('Введите корректную сумму')
+      return
+    }
+    setError('')
+    setSuccess('')
+    setToppingUp(true)
+    const token = localStorage.getItem('auth_token')
+    try {
+      const response = await fetch(`${ADMIN_API_URL}?action=topup-wallet`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          user_id: topupUser.id,
+          amount,
+          description: topupDescription || 'Пополнение администратором',
+        }),
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Ошибка пополнения')
+      setSuccess(`Баланс ${topupUser.email} пополнен на ${amount} ₽. Новый баланс: ${data.new_balance} ₽`)
+      setTopupUser(null)
+      setTopupAmount('')
+      setTopupDescription('')
+      await loadUsers()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ошибка пополнения')
+    } finally {
+      setToppingUp(false)
     }
   }
 
@@ -274,6 +316,21 @@ export function AdminUsersPage() {
                           >
                             <Icon name="Key" size={16} className="mr-1" />
                             Пароль
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              setTopupUser(user)
+                              setTopupAmount('')
+                              setTopupDescription('')
+                              setError('')
+                              setSuccess('')
+                            }}
+                            size="sm"
+                            variant="outline"
+                            className="border-green-500/30 hover:bg-green-500/10 text-green-400"
+                          >
+                            <Icon name="PlusCircle" size={16} className="mr-1" />
+                            Баланс
                           </Button>
                         </div>
                       </td>
@@ -476,6 +533,101 @@ export function AdminUsersPage() {
                         setResetPasswordUser(null)
                         setNewPassword('')
                       }}
+                      variant="outline"
+                      className="border-primary/30"
+                    >
+                      Отмена
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {topupUser && (
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+              <div className="bg-card/95 backdrop-blur-xl border border-primary/20 rounded-2xl p-8 max-w-md w-full">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="font-heading text-2xl font-bold text-white">
+                    Пополнить баланс
+                  </h2>
+                  <Button
+                    onClick={() => setTopupUser(null)}
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-white"
+                  >
+                    <Icon name="X" size={20} />
+                  </Button>
+                </div>
+
+                <div className="mb-6 p-4 bg-green-500/5 border border-green-500/20 rounded-lg">
+                  <p className="text-sm text-muted-foreground mb-1">Пользователь:</p>
+                  <p className="text-white font-medium">{topupUser.email}</p>
+                  {topupUser.full_name && (
+                    <p className="text-sm text-muted-foreground mt-1">{topupUser.full_name}</p>
+                  )}
+                  <p className="text-sm text-green-400 mt-2">
+                    Текущий баланс: {topupUser.balance?.toLocaleString('ru-RU') || '0'} ₽
+                  </p>
+                </div>
+
+                {error && (
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-4 flex items-start gap-2">
+                    <Icon name="AlertCircle" size={20} className="text-red-500 mt-0.5 flex-shrink-0" />
+                    <p className="text-red-500 text-sm">{error}</p>
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">
+                      Сумма пополнения (₽) *
+                    </label>
+                    <Input
+                      type="number"
+                      min="1"
+                      step="1"
+                      required
+                      value={topupAmount}
+                      onChange={(e) => setTopupAmount(e.target.value)}
+                      placeholder="Например: 500"
+                      className="bg-background/50 border-primary/30 focus:border-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">
+                      Комментарий
+                    </label>
+                    <Input
+                      type="text"
+                      value={topupDescription}
+                      onChange={(e) => setTopupDescription(e.target.value)}
+                      placeholder="Пополнение администратором"
+                      className="bg-background/50 border-primary/30 focus:border-primary"
+                    />
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <Button
+                      onClick={handleTopupWallet}
+                      disabled={toppingUp || !topupAmount}
+                      className="flex-1 bg-gradient-to-r from-green-600 to-green-500 hover:shadow-lg hover:shadow-green-500/30 text-white"
+                    >
+                      {toppingUp ? (
+                        <>
+                          <Icon name="Loader2" size={18} className="animate-spin mr-2" />
+                          Пополнение...
+                        </>
+                      ) : (
+                        <>
+                          <Icon name="PlusCircle" size={18} className="mr-2" />
+                          Пополнить баланс
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      onClick={() => setTopupUser(null)}
                       variant="outline"
                       className="border-primary/30"
                     >

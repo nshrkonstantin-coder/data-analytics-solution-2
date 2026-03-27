@@ -108,6 +108,8 @@ def handler(event: dict, context) -> dict:
                 return update_user(conn, body)
             elif action == 'reset-password':
                 return reset_user_password(conn, body)
+            elif action == 'topup-wallet':
+                return admin_topup_wallet(conn, body)
         
         conn.close()
         
@@ -493,5 +495,61 @@ def reset_user_password(conn, body: dict) -> dict:
         'statusCode': 200,
         'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
         'body': json.dumps({'message': 'Пароль сброшен'}),
+        'isBase64Encoded': False
+    }
+
+
+def admin_topup_wallet(conn, body: dict) -> dict:
+    user_id = body.get('user_id')
+    amount = float(body.get('amount', 0))
+    description = body.get('description') or 'Пополнение администратором'
+
+    if not user_id:
+        return {
+            'statusCode': 400,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'Укажите user_id'}),
+            'isBase64Encoded': False
+        }
+    if amount <= 0:
+        return {
+            'statusCode': 400,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'Сумма должна быть больше 0'}),
+            'isBase64Encoded': False
+        }
+
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    cursor.execute(f"SELECT id, balance FROM {SCHEMA}.wallets WHERE user_id = %s", (user_id,))
+    wallet = cursor.fetchone()
+
+    if not wallet:
+        cursor.close()
+        conn.close()
+        return {
+            'statusCode': 404,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'Кошелёк пользователя не найден'}),
+            'isBase64Encoded': False
+        }
+
+    new_balance = float(wallet['balance']) + amount
+    cursor.execute(
+        f"UPDATE {SCHEMA}.wallets SET balance = %s, updated_at = NOW() WHERE id = %s",
+        (new_balance, wallet['id'])
+    )
+    cursor.execute(
+        f"""INSERT INTO {SCHEMA}.wallet_transactions (wallet_id, amount, type, description)
+            VALUES (%s, %s, 'credit', %s)""",
+        (wallet['id'], amount, description)
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return {
+        'statusCode': 200,
+        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+        'body': json.dumps({'success': True, 'credited': amount, 'new_balance': new_balance}),
         'isBase64Encoded': False
     }

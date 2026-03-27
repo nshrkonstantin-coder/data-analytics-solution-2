@@ -333,7 +333,12 @@ export function AdminProductsPage() {
                       <option value="Разное">Разное</option>
                       <option value="Бизнес">Бизнес</option>
                       <option value="Производство">Производство</option>
-                      <option value="Горное производство">Горное производство</option>
+                      <option value="Горно-рудная промышленность">Горно-рудная промышленность</option>
+                      <option value="Цифровой помощник">Цифровой помощник</option>
+                      <option value="Корпоративные">Корпоративные</option>
+                      <option value="Переводчик">Переводчик</option>
+                      <option value="1С категория">1С категория</option>
+                      <option value="Соцсети">Соцсети</option>
                     </select>
                   </div>
 

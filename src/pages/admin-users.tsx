@@ -32,6 +32,7 @@ export function AdminUsersPage() {
   const [topupUser, setTopupUser] = useState<User | null>(null)
   const [topupAmount, setTopupAmount] = useState('')
   const [topupDescription, setTopupDescription] = useState('')
+  const [topupMode, setTopupMode] = useState<'topup' | 'set' | 'reset'>('topup')
   const [toppingUp, setToppingUp] = useState(false)
 
   useEffect(() => {
@@ -146,39 +147,44 @@ export function AdminUsersPage() {
     }
   }
 
-  const handleTopupWallet = async () => {
-    if (!topupUser || !topupAmount) return
-    const amount = parseFloat(topupAmount)
-    if (isNaN(amount) || amount <= 0) {
-      setError('Введите корректную сумму')
-      return
+  const handleTopupWallet = async (mode: 'topup' | 'set' | 'reset' = topupMode) => {
+    if (!topupUser) return
+    if (mode !== 'reset' && !topupAmount) return
+    if (mode !== 'reset') {
+      const amount = parseFloat(topupAmount)
+      if (isNaN(amount) || amount < 0) {
+        setError('Введите корректную сумму')
+        return
+      }
     }
     setError('')
     setSuccess('')
     setToppingUp(true)
     const token = localStorage.getItem('auth_token')
     try {
+      const payload: Record<string, unknown> = {
+        user_id: topupUser.id,
+        mode,
+        description: topupDescription || undefined,
+      }
+      if (mode !== 'reset') payload.amount = parseFloat(topupAmount)
       const response = await fetch(`${ADMIN_API_URL}?action=topup-wallet`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          user_id: topupUser.id,
-          amount,
-          description: topupDescription || 'Пополнение администратором',
-        }),
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(payload),
       })
       const data = await response.json()
-      if (!response.ok) throw new Error(data.error || 'Ошибка пополнения')
-      setSuccess(`Баланс ${topupUser.email} пополнен на ${amount} ₽. Новый баланс: ${data.new_balance} ₽`)
+      if (!response.ok) throw new Error(data.error || 'Ошибка изменения баланса')
+      const modeLabel = mode === 'reset' ? 'обнулён' : mode === 'set' ? 'установлен в' : 'пополнен на'
+      const amountLabel = mode === 'reset' ? '' : ` ${mode === 'set' ? parseFloat(topupAmount) : parseFloat(topupAmount)} ₽`
+      setSuccess(`Баланс ${topupUser.email} ${modeLabel}${amountLabel}. Итого: ${data.new_balance} ₽`)
       setTopupUser(null)
       setTopupAmount('')
       setTopupDescription('')
+      setTopupMode('topup')
       await loadUsers()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ошибка пополнения')
+      setError(err instanceof Error ? err.message : 'Ошибка изменения баланса')
     } finally {
       setToppingUp(false)
     }
@@ -581,43 +587,85 @@ export function AdminUsersPage() {
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-white mb-2">
-                      Сумма пополнения (₽) *
-                    </label>
-                    <Input
-                      type="number"
-                      min="1"
-                      step="1"
-                      required
-                      value={topupAmount}
-                      onChange={(e) => setTopupAmount(e.target.value)}
-                      placeholder="Например: 500"
-                      className="bg-background/50 border-primary/30 focus:border-primary"
-                    />
+                    <label className="block text-sm font-medium text-white mb-2">Режим</label>
+                    <div className="flex gap-2">
+                      {(['topup', 'set', 'reset'] as const).map((m) => (
+                        <button
+                          key={m}
+                          onClick={() => setTopupMode(m)}
+                          className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors border ${
+                            topupMode === m
+                              ? m === 'reset'
+                                ? 'bg-red-500/20 border-red-500/50 text-red-400'
+                                : 'bg-green-500/20 border-green-500/50 text-green-400'
+                              : 'bg-background/30 border-primary/20 text-muted-foreground hover:border-primary/40'
+                          }`}
+                        >
+                          {m === 'topup' ? 'Пополнить' : m === 'set' ? 'Установить' : 'Обнулить'}
+                        </button>
+                      ))}
+                    </div>
                   </div>
+
+                  {topupMode !== 'reset' && (
+                    <div>
+                      <label className="block text-sm font-medium text-white mb-2">
+                        {topupMode === 'topup' ? 'Сумма пополнения (₽) *' : 'Новый баланс (₽) *'}
+                      </label>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="1"
+                        required
+                        value={topupAmount}
+                        onChange={(e) => setTopupAmount(e.target.value)}
+                        placeholder="Например: 500"
+                        className="bg-background/50 border-primary/30 focus:border-primary"
+                      />
+                    </div>
+                  )}
+
+                  {topupMode === 'reset' && (
+                    <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                      <p className="text-sm text-red-400">Баланс будет сброшен до 0 ₽</p>
+                    </div>
+                  )}
+
                   <div>
-                    <label className="block text-sm font-medium text-white mb-2">
-                      Комментарий
-                    </label>
+                    <label className="block text-sm font-medium text-white mb-2">Комментарий</label>
                     <Input
                       type="text"
                       value={topupDescription}
                       onChange={(e) => setTopupDescription(e.target.value)}
-                      placeholder="Пополнение администратором"
+                      placeholder={topupMode === 'reset' ? 'Обнуление администратором' : 'Пополнение администратором'}
                       className="bg-background/50 border-primary/30 focus:border-primary"
                     />
                   </div>
 
                   <div className="flex gap-3 pt-4">
                     <Button
-                      onClick={handleTopupWallet}
-                      disabled={toppingUp || !topupAmount}
-                      className="flex-1 bg-gradient-to-r from-green-600 to-green-500 hover:shadow-lg hover:shadow-green-500/30 text-white"
+                      onClick={() => handleTopupWallet(topupMode)}
+                      disabled={toppingUp || (topupMode !== 'reset' && !topupAmount)}
+                      className={`flex-1 text-white hover:shadow-lg ${
+                        topupMode === 'reset'
+                          ? 'bg-gradient-to-r from-red-700 to-red-500 hover:shadow-red-500/30'
+                          : 'bg-gradient-to-r from-green-600 to-green-500 hover:shadow-green-500/30'
+                      }`}
                     >
                       {toppingUp ? (
                         <>
                           <Icon name="Loader2" size={18} className="animate-spin mr-2" />
-                          Пополнение...
+                          Применяю...
+                        </>
+                      ) : topupMode === 'reset' ? (
+                        <>
+                          <Icon name="Trash2" size={18} className="mr-2" />
+                          Обнулить баланс
+                        </>
+                      ) : topupMode === 'set' ? (
+                        <>
+                          <Icon name="Edit" size={18} className="mr-2" />
+                          Установить баланс
                         </>
                       ) : (
                         <>

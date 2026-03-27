@@ -501,21 +501,14 @@ def reset_user_password(conn, body: dict) -> dict:
 
 def admin_topup_wallet(conn, body: dict) -> dict:
     user_id = body.get('user_id')
-    amount = float(body.get('amount', 0))
-    description = body.get('description') or 'Пополнение администратором'
+    mode = body.get('mode', 'topup')  # topup | set | reset
+    description = body.get('description') or 'Изменение баланса администратором'
 
     if not user_id:
         return {
             'statusCode': 400,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
             'body': json.dumps({'error': 'Укажите user_id'}),
-            'isBase64Encoded': False
-        }
-    if amount <= 0:
-        return {
-            'statusCode': 400,
-            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': 'Сумма должна быть больше 0'}),
             'isBase64Encoded': False
         }
 
@@ -533,16 +526,50 @@ def admin_topup_wallet(conn, body: dict) -> dict:
             'isBase64Encoded': False
         }
 
-    new_balance = float(wallet['balance']) + amount
+    old_balance = float(wallet['balance'])
+
+    if mode == 'reset':
+        new_balance = 0.0
+        description = description or 'Обнуление баланса администратором'
+    elif mode == 'set':
+        amount = float(body.get('amount', 0))
+        if amount < 0:
+            cursor.close()
+            conn.close()
+            return {
+                'statusCode': 400,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Сумма не может быть отрицательной'}),
+                'isBase64Encoded': False
+            }
+        new_balance = amount
+    else:
+        amount = float(body.get('amount', 0))
+        if amount <= 0:
+            cursor.close()
+            conn.close()
+            return {
+                'statusCode': 400,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Сумма должна быть больше 0'}),
+                'isBase64Encoded': False
+            }
+        new_balance = old_balance + amount
+
+    diff = new_balance - old_balance
+    tx_type = 'deposit' if diff >= 0 else 'withdrawal'
+    tx_amount = abs(diff)
+
     cursor.execute(
         f"UPDATE {SCHEMA}.wallets SET balance = %s, updated_at = NOW() WHERE id = %s",
         (new_balance, wallet['id'])
     )
-    cursor.execute(
-        f"""INSERT INTO {SCHEMA}.wallet_transactions (wallet_id, amount, type, description)
-            VALUES (%s, %s, 'credit', %s)""",
-        (wallet['id'], amount, description)
-    )
+    if tx_amount > 0:
+        cursor.execute(
+            f"""INSERT INTO {SCHEMA}.wallet_transactions (wallet_id, amount, type, description)
+                VALUES (%s, %s, %s, %s)""",
+            (wallet['id'], tx_amount, tx_type, description)
+        )
     conn.commit()
     cursor.close()
     conn.close()
@@ -550,6 +577,6 @@ def admin_topup_wallet(conn, body: dict) -> dict:
     return {
         'statusCode': 200,
         'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-        'body': json.dumps({'success': True, 'credited': amount, 'new_balance': new_balance}),
+        'body': json.dumps({'success': True, 'old_balance': old_balance, 'new_balance': new_balance}),
         'isBase64Encoded': False
     }

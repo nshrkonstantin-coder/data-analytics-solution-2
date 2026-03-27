@@ -45,13 +45,20 @@ def handler(event: dict, context) -> dict:
 
     params = event.get('queryStringParameters') or {}
     action = params.get('action', '')
+    path = event.get('path', '').rstrip('/')
 
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
     cursor = conn.cursor(cursor_factory=RealDictCursor)
 
     try:
-        if method == 'GET' and action == 'balance':
+        # GET /balance?email=... или GET ?action=balance&email=...
+        if method == 'GET' and (action == 'balance' or path.endswith('/balance')):
             return get_balance(conn, cursor, params)
+
+        # POST /charge — списание (алиас для voiceal.ru)
+        elif method == 'POST' and path.endswith('/charge'):
+            body = json.loads(event.get('body') or '{}')
+            return deduct(conn, cursor, body)
 
         elif method == 'POST' and action == 'topup':
             body = json.loads(event.get('body') or '{}')
@@ -62,7 +69,7 @@ def handler(event: dict, context) -> dict:
             return deduct(conn, cursor, body)
 
         else:
-            return resp(404, {'error': 'Неизвестный action. Доступны: balance, topup, deduct'})
+            return resp(404, {'error': 'Неизвестный action. Доступны: balance, topup, deduct, charge'})
     finally:
         cursor.close()
         conn.close()
@@ -184,5 +191,6 @@ def deduct(conn, cursor, body: dict) -> dict:
         'success': True,
         'email': email,
         'debited': amount,
+        'balance': new_balance,
         'new_balance': new_balance,
     })

@@ -106,6 +106,8 @@ def handler(event: dict, context) -> dict:
                 return renew_subscription(conn, user['id'], body)
             elif action == 'pay-from-wallet':
                 return pay_from_wallet(conn, user['id'], body)
+            elif action == 'delete':
+                return delete_order(conn, user['id'], body)
         
         conn.close()
         return {
@@ -542,6 +544,57 @@ def pay_from_wallet(conn, user_id: int, body: dict) -> dict:
             'website_url': product['website_url'],
             'expires_at': str(expires_at) if expires_at else None
         }, default=str),
+        'isBase64Encoded': False
+    }
+
+
+def delete_order(conn, user_id: int, body: dict) -> dict:
+    """Удаляет заказ пользователя (только неоплаченные или истёкшие)"""
+    order_id = body.get('order_id')
+
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    cursor.execute("""
+        SELECT id, payment_confirmed, subscription_status,
+               CASE
+                 WHEN payment_confirmed AND expires_at > NOW() THEN 'active'
+                 WHEN payment_confirmed AND expires_at <= NOW() THEN 'expired'
+                 WHEN payment_confirmed AND expires_at IS NULL THEN 'active'
+                 ELSE 'pending'
+               END as sub_status
+        FROM orders
+        WHERE id = %s AND user_id = %s
+    """, (order_id, user_id))
+    order = cursor.fetchone()
+
+    if not order:
+        cursor.close()
+        conn.close()
+        return {
+            'statusCode': 404,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'Заказ не найден'}),
+            'isBase64Encoded': False
+        }
+
+    if order['payment_confirmed'] and order['sub_status'] == 'active':
+        cursor.close()
+        conn.close()
+        return {
+            'statusCode': 400,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'Нельзя удалить активную подписку'}),
+            'isBase64Encoded': False
+        }
+
+    cursor.execute("DELETE FROM orders WHERE id = %s AND user_id = %s", (order_id, user_id))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return {
+        'statusCode': 200,
+        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+        'body': json.dumps({'message': 'Заказ удалён'}),
         'isBase64Encoded': False
     }
 

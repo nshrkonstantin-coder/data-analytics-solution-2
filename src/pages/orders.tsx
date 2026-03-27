@@ -67,6 +67,9 @@ export function OrdersPage() {
   const [createdOrderId, setCreatedOrderId] = useState<number | null>(null)
   const [confirmResult, setConfirmResult] = useState<{ status: string; message: string; website_url?: string; expires_at?: string } | null>(null)
 
+  const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
+
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null)
   const [cardNumber, setCardNumber] = useState('')
   const [cardExpiry, setCardExpiry] = useState('')
@@ -226,6 +229,27 @@ export function OrdersPage() {
     const digits = val.replace(/\D/g, '').slice(0, 4)
     if (digits.length >= 3) return digits.slice(0, 2) + '/' + digits.slice(2)
     return digits
+  }
+
+  const handleDeleteOrder = async (orderId: number) => {
+    setDeletingId(orderId)
+    setError('')
+    const token = localStorage.getItem('auth_token')
+    try {
+      const res = await fetch(`${ORDERS_API_URL}?action=delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ order_id: orderId }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Ошибка удаления')
+      setOrders(prev => prev.filter(o => o.id !== orderId))
+      setConfirmDeleteId(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ошибка удаления')
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   const handleRenew = async (orderId: number) => {
@@ -460,6 +484,45 @@ export function OrdersPage() {
                               <Icon name="RefreshCw" size={14} className="mr-2" />
                               Продлить подписку
                             </Button>
+                          )}
+
+                          {order.subscription_status !== 'active' && (
+                            confirmDeleteId === order.id ? (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">Удалить заказ?</span>
+                                <Button
+                                  onClick={() => handleDeleteOrder(order.id)}
+                                  disabled={deletingId === order.id}
+                                  size="sm"
+                                  className="bg-red-500/20 border border-red-500/40 text-red-400 hover:bg-red-500/30"
+                                >
+                                  {deletingId === order.id ? (
+                                    <Icon name="Loader2" size={14} className="animate-spin mr-1" />
+                                  ) : (
+                                    <Icon name="Trash2" size={14} className="mr-1" />
+                                  )}
+                                  Да, удалить
+                                </Button>
+                                <Button
+                                  onClick={() => setConfirmDeleteId(null)}
+                                  size="sm"
+                                  variant="ghost"
+                                  className="text-muted-foreground hover:text-white"
+                                >
+                                  Отмена
+                                </Button>
+                              </div>
+                            ) : (
+                              <Button
+                                onClick={() => setConfirmDeleteId(order.id)}
+                                size="sm"
+                                variant="ghost"
+                                className="text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
+                              >
+                                <Icon name="Trash2" size={14} className="mr-1" />
+                                Удалить
+                              </Button>
+                            )
                           )}
                         </div>
 

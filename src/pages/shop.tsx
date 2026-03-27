@@ -214,19 +214,23 @@ export function ShopPage() {
           ) : (
             <>
               <div className="flex flex-wrap gap-2 mb-6">
-                {['Все', ...Array.from(new Set(products.map((p) => p.category)))].map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setActiveCategory(cat)}
-                    className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
-                      activeCategory === cat
-                        ? 'bg-primary text-white shadow-lg shadow-primary/30'
-                        : 'bg-card/50 border border-primary/20 text-muted-foreground hover:border-primary/50 hover:text-white'
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
+                {['Все', 'Для компаний', 'Игры', 'Услуги', 'Охрана Труда', 'Промышленная Безопасность', 'Окружающая Среда', 'Пожарная Безопасность', 'Разное', 'Бизнес', 'Производство', 'Горное производство'].map((cat) => {
+                  const count = cat === 'Все' ? products.length : products.filter((p) => p.category === cat).length
+                  if (cat !== 'Все' && count === 0) return null
+                  return (
+                    <button
+                      key={cat}
+                      onClick={() => setActiveCategory(cat)}
+                      className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
+                        activeCategory === cat
+                          ? 'bg-primary text-white shadow-lg shadow-primary/30'
+                          : 'bg-card/50 border border-primary/20 text-muted-foreground hover:border-primary/50 hover:text-white'
+                      }`}
+                    >
+                      {cat} {count > 0 && <span className="opacity-60 text-xs">({count})</span>}
+                    </button>
+                  )
+                })}
               </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">

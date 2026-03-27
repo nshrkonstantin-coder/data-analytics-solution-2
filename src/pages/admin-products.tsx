@@ -317,12 +317,24 @@ export function AdminProductsPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-white mb-2">Категория *</label>
-                    <Input
+                    <select
                       value={formData.category}
                       onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                      placeholder="Веб-сайты"
-                      className="bg-background/50 border-primary/30 focus:border-primary"
-                    />
+                      className="w-full rounded-md bg-background/50 border border-primary/30 focus:border-primary px-3 py-2 text-white text-sm"
+                    >
+                      <option value="">— Выберите категорию —</option>
+                      <option value="Для компаний">Для компаний</option>
+                      <option value="Игры">Игры</option>
+                      <option value="Услуги">Услуги</option>
+                      <option value="Охрана Труда">Охрана Труда</option>
+                      <option value="Промышленная Безопасность">Промышленная Безопасность</option>
+                      <option value="Окружающая Среда">Окружающая Среда</option>
+                      <option value="Пожарная Безопасность">Пожарная Безопасность</option>
+                      <option value="Разное">Разное</option>
+                      <option value="Бизнес">Бизнес</option>
+                      <option value="Производство">Производство</option>
+                      <option value="Горное производство">Горное производство</option>
+                    </select>
                   </div>
 
                   <div>

@@ -223,8 +223,8 @@ export function AdminUsersPage() {
         </div>
       </nav>
 
-      <div className="container mx-auto px-4 py-12">
-        <div className="max-w-6xl mx-auto">
+      <div className="px-4 py-12">
+        <div className="w-full">
           <div className="bg-card/50 backdrop-blur-xl border border-primary/20 rounded-2xl p-8 mb-6">
             <div className="flex items-center justify-between mb-4">
               <div>

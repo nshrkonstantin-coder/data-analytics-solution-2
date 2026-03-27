@@ -554,7 +554,7 @@ def delete_order(conn, user_id: int, body: dict) -> dict:
 
     cursor = conn.cursor(cursor_factory=RealDictCursor)
     cursor.execute("""
-        SELECT id, payment_confirmed, subscription_status,
+        SELECT id, payment_confirmed, expires_at,
                CASE
                  WHEN payment_confirmed AND expires_at > NOW() THEN 'active'
                  WHEN payment_confirmed AND expires_at <= NOW() THEN 'expired'

@@ -14,7 +14,6 @@ const REQUISITES = [
   { label: "Корреспондентский счёт", value: "30101810500000000637", icon: "Landmark" },
   { label: "БИК банка", value: "047601637", icon: "Barcode" },
   { label: "Банк", value: "ПАО Сбербанк, г. Чита", icon: "Banknote" },
-  { label: "Генеральный директор", value: "Шнюков Константин Анатольевич", icon: "User" },
   { label: "E-mail", value: "ddmaxi-srs@yandex.ru", icon: "Mail" },
 ];
 

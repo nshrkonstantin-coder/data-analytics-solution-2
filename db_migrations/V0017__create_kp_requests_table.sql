@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS kp_requests (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  company_full_name VARCHAR(500),
+  company_short_name VARCHAR(255),
+  legal_address TEXT,
+  actual_address TEXT,
+  inn VARCHAR(12),
+  kpp VARCHAR(9),
+  ogrn VARCHAR(15),
+  director_name VARCHAR(255),
+  director_position VARCHAR(255),
+  phone VARCHAR(50),
+  email VARCHAR(255),
+  bank_name VARCHAR(255),
+  bank_account VARCHAR(20),
+  corr_account VARCHAR(20),
+  bik VARCHAR(9),
+  status VARCHAR(50) DEFAULT 'submitted',
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);

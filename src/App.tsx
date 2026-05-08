@@ -24,6 +24,8 @@ import { WalletPage } from "./pages/wallet";
 import { PrivacyPage } from "./pages/privacy";
 import { ConsentPage } from "./pages/consent";
 import { DocumentsPage } from "./pages/documents";
+import { KpRequestPage } from "./pages/kp-request";
+import { ContractRequestPage } from "./pages/contract-request";
 import { PwaInstallBanner } from "./components/pwa-install-banner";
 
 const queryClient = new QueryClient();
@@ -54,6 +56,8 @@ const App = () => (
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/consent" element={<ConsentPage />} />
           <Route path="/dashboard/documents" element={<DocumentsPage />} />
+          <Route path="/dashboard/kp-request" element={<KpRequestPage />} />
+          <Route path="/dashboard/contract-request" element={<ContractRequestPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

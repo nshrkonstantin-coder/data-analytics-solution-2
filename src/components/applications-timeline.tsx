@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react"
+import { useContent } from "@/hooks/useContent"
 
 export function ApplicationsTimeline() {
   const [isVisible, setIsVisible] = useState(false)
   const sectionRef = useRef<HTMLElement>(null)
+  const { content } = useContent('process')
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -28,23 +30,23 @@ export function ApplicationsTimeline() {
   const processes = [
     {
       number: "01",
-      title: "Диагностика и анализ",
-      description: "Как в автосервисе: сначала проводим полную диагностику бизнес-задач, анализируем потребности и разрабатываем техническое задание."
+      title: content.step1_title,
+      description: content.step1_description
     },
     {
       number: "02",
-      title: "Проектирование и разработка",
-      description: "Создаем архитектуру решения, интерфейс и реализуем функционал. Каждый этап согласовывается с клиентом."
+      title: content.step2_title,
+      description: content.step2_description
     },
     {
       number: "03",
-      title: "Тестирование и запуск",
-      description: "Проводим комплексное тестирование, устраняем ошибки и запускаем проект. Как тестирование авто после ремонта."
+      title: content.step3_title,
+      description: content.step3_description
     },
     {
       number: "04",
-      title: "Поддержка и обслуживание",
-      description: "Обеспечиваем техническую поддержку, мониторинг и развитие проекта. Гарантийное и постгарантийное обслуживание."
+      title: content.step4_title,
+      description: content.step4_description
     }
   ]
 
@@ -53,14 +55,13 @@ export function ApplicationsTimeline() {
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <div className="text-primary font-heading font-semibold text-sm tracking-[0.2em] uppercase mb-4">
-            Наш подход
+            {content.title}
           </div>
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 font-heading">
-            Как мы работаем
+            {content.heading}
           </h2>
           <p className="text-muted-foreground text-lg max-w-3xl mx-auto font-body">
-            Применяем инженерный подход из авторемонта к созданию digital-продуктов: диагностируем, 
-            планируем, реализуем, тестируем и обеспечиваем поддержку.
+            {content.description}
           </p>
         </div>
 

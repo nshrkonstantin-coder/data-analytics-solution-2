@@ -19,6 +19,16 @@
         "error": "string"
       },
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "Get portfolio projects (public)",
+      "method": "GET",
+      "path": "/?action=portfolio",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "projects": "array"
+      },
+      "bodyMatcher": "partial"
     }
   ]
 }

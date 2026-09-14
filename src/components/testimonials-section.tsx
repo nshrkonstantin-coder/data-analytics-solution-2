@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
@@ -10,23 +10,65 @@ import {
 } from "@/components/ui/dialog"
 import { useNavigate } from 'react-router-dom'
 
-const portfolioItems = [
+const ADMIN_API_URL = 'https://functions.poehali.dev/60c925e5-07c4-4e22-acbb-7c60c1d9524d'
+
+interface PortfolioProject {
+  id: number
+  category: string
+  name: string
+  tech: string
+  image_url: string
+  is_large: boolean
+  is_active: boolean
+  sort_order: number
+}
+
+const fallbackItems: PortfolioProject[] = [
   {
+    id: 1,
     category: "Веб-приложение",
     name: "Система управления автопарком AutoFleet Pro",
     tech: "React / Node.js / PostgreSQL",
-    large: true
+    image_url: "",
+    is_large: true,
+    is_active: true,
+    sort_order: 1,
   },
   {
+    id: 2,
     category: "Корпоративный сайт",
     name: "Портал для логистической компании",
-    tech: "Vue.js / Laravel"
+    tech: "Vue.js / Laravel",
+    image_url: "",
+    is_large: false,
+    is_active: true,
+    sort_order: 2,
   }
 ]
 
 export function TestimonialsSection() {
   const [showDialog, setShowDialog] = useState(false)
+  const [portfolioItems, setPortfolioItems] = useState<PortfolioProject[]>(fallbackItems)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    const loadProjects = async () => {
+      try {
+        const response = await fetch(`${ADMIN_API_URL}?action=portfolio`)
+        if (response.ok) {
+          const data = await response.json()
+          const projects: PortfolioProject[] = (data.projects || []).filter((p: PortfolioProject) => p.is_active)
+          if (projects.length > 0) {
+            setPortfolioItems(projects)
+          }
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки проектов:', error)
+      }
+    }
+
+    loadProjects()
+  }, [])
 
   return (
     <section id="portfolio" className="py-24 bg-[#070B13] relative">
@@ -46,14 +88,21 @@ export function TestimonialsSection() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-          {portfolioItems.map((item, index) => (
+          {portfolioItems.map((item) => (
             <Card
-              key={index}
+              key={item.id}
               className={`${
-                item.large ? 'md:col-span-2' : ''
+                item.is_large ? 'md:col-span-2' : ''
               } h-[300px] bg-gradient-to-br from-card/80 to-card/40 border-border hover:border-primary/30 transition-all duration-300 overflow-hidden group relative`}
             >
               <CardContent className="p-0 h-full relative">
+                {item.image_url && (
+                  <img
+                    src={item.image_url}
+                    alt={item.name}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                )}
                 {/* Gradient overlay on hover */}
                 <div className="absolute inset-0 bg-gradient-to-t from-background/95 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-8">
                   <div>

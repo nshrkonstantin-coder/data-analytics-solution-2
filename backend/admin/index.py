@@ -43,6 +43,9 @@ def handler(event: dict, context) -> dict:
         if method == 'GET' and action == 'content':
             return get_site_content(conn)
         
+        if method == 'GET' and action == 'portfolio':
+            return get_portfolio_projects(conn)
+        
         headers = event.get('headers', {})
         token = headers.get('x-authorization', '') or headers.get('X-Authorization', '')
         token = token.replace('Bearer ', '')
@@ -88,6 +91,8 @@ def handler(event: dict, context) -> dict:
                 return get_stats(conn)
             elif action == 'get-orders':
                 return get_orders(conn)
+            elif action == 'portfolio':
+                return get_portfolio_projects(conn)
         
         elif method == 'POST':
             body = json.loads(event.get('body', '{}'))
@@ -97,6 +102,8 @@ def handler(event: dict, context) -> dict:
                 return create_product(conn, body)
             elif action == 'confirm-payment':
                 return admin_confirm_payment(conn, body)
+            elif action == 'portfolio':
+                return create_portfolio_project(conn, body)
         
         elif method == 'PUT':
             body = json.loads(event.get('body', '{}'))
@@ -110,6 +117,13 @@ def handler(event: dict, context) -> dict:
                 return reset_user_password(conn, body)
             elif action == 'topup-wallet':
                 return admin_topup_wallet(conn, body)
+            elif action == 'portfolio':
+                return update_portfolio_project(conn, body)
+        
+        elif method == 'DELETE':
+            if action == 'portfolio':
+                project_id = (event.get('queryStringParameters') or {}).get('id')
+                return delete_portfolio_project(conn, project_id)
         
         conn.close()
         
@@ -578,5 +592,107 @@ def admin_topup_wallet(conn, body: dict) -> dict:
         'statusCode': 200,
         'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
         'body': json.dumps({'success': True, 'old_balance': old_balance, 'new_balance': new_balance}),
+        'isBase64Encoded': False
+    }
+
+
+def get_portfolio_projects(conn) -> dict:
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    cursor.execute(f"""
+        SELECT * FROM {SCHEMA}.portfolio_projects
+        ORDER BY sort_order ASC, id ASC
+    """)
+    projects = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    return {
+        'statusCode': 200,
+        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+        'body': json.dumps({'projects': [dict(p) for p in projects]}, default=str),
+        'isBase64Encoded': False
+    }
+
+
+def create_portfolio_project(conn, body: dict) -> dict:
+    cursor = conn.cursor()
+    cursor.execute(f"""
+        INSERT INTO {SCHEMA}.portfolio_projects
+            (category, name, tech, image_url, is_large, is_active, sort_order)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+    """, (
+        body.get('category', ''),
+        body.get('name', ''),
+        body.get('tech', ''),
+        body.get('image_url', ''),
+        bool(body.get('is_large', False)),
+        bool(body.get('is_active', True)),
+        int(body.get('sort_order', 0)),
+    ))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return {
+        'statusCode': 201,
+        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+        'body': json.dumps({'message': 'Проект создан'}),
+        'isBase64Encoded': False
+    }
+
+
+def update_portfolio_project(conn, body: dict) -> dict:
+    project_id = body.get('id')
+
+    cursor = conn.cursor()
+    cursor.execute(f"""
+        UPDATE {SCHEMA}.portfolio_projects
+        SET category = %s, name = %s, tech = %s, image_url = %s,
+            is_large = %s, is_active = %s, sort_order = %s, updated_at = NOW()
+        WHERE id = %s
+    """, (
+        body.get('category', ''),
+        body.get('name', ''),
+        body.get('tech', ''),
+        body.get('image_url', ''),
+        bool(body.get('is_large', False)),
+        bool(body.get('is_active', True)),
+        int(body.get('sort_order', 0)),
+        project_id,
+    ))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return {
+        'statusCode': 200,
+        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+        'body': json.dumps({'message': 'Проект обновлен'}),
+        'isBase64Encoded': False
+    }
+
+
+def delete_portfolio_project(conn, project_id) -> dict:
+    if not project_id:
+        conn.close()
+        return {
+            'statusCode': 400,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'Укажите id проекта'}),
+            'isBase64Encoded': False
+        }
+
+    cursor = conn.cursor()
+    cursor.execute(f"DELETE FROM {SCHEMA}.portfolio_projects WHERE id = %s", (project_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return {
+        'statusCode': 200,
+        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+        'body': json.dumps({'message': 'Проект удален'}),
         'isBase64Encoded': False
     }

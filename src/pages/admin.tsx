@@ -187,6 +187,21 @@ export function AdminPage() {
             </Link>
 
             <Link
+              to="/admin/portfolio"
+              className="bg-card/50 backdrop-blur-xl border border-primary/20 rounded-2xl p-6 hover:border-primary/40 transition-all duration-300 hover:-translate-y-1 group"
+            >
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                  <Icon name="Briefcase" size={24} className="text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-heading text-xl font-bold text-white">Наши разработки</h3>
+                  <p className="text-sm text-muted-foreground">Реализованные проекты</p>
+                </div>
+              </div>
+            </Link>
+
+            <Link
               to="/admin/orders"
               className="bg-card/50 backdrop-blur-xl border border-primary/20 rounded-2xl p-6 hover:border-primary/40 transition-all duration-300 hover:-translate-y-1 group"
             >

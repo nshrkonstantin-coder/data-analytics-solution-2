@@ -26,6 +26,27 @@ interface FieldDefinition {
   imageUrl?: string
 }
 
+interface PortfolioProject {
+  id: number
+  category: string
+  name: string
+  tech: string
+  image_url: string
+  is_large: boolean
+  is_active: boolean
+  sort_order: number
+}
+
+const EMPTY_PORTFOLIO_FORM = {
+  category: '',
+  name: '',
+  tech: '',
+  image_url: '',
+  is_large: false,
+  is_active: true,
+  sort_order: '0',
+}
+
 const DEFAULT_SECTIONS = [
   { id: 'hero', name: '🏠 Главный экран', icon: 'Home', fields: [
     { key: 'title', label: 'Заголовок', type: 'text', current: 'Цифровые решения', preview: 'Большой заголовок вверху страницы' },
@@ -55,6 +76,7 @@ const DEFAULT_SECTIONS = [
     { key: 'step4_title', label: 'Этап 4 — Заголовок', type: 'text', current: 'Поддержка и обслуживание', preview: 'Заголовок четвёртого этапа' },
     { key: 'step4_description', label: 'Этап 4 — Описание', type: 'textarea', current: 'Обеспечиваем техническую поддержку, мониторинг и развитие проекта. Гарантийное и постгарантийное обслуживание.', preview: 'Описание четвёртого этапа' },
   ]},
+  { id: 'portfolio', name: '💼 Наши разработки', icon: 'Briefcase', fields: [] as FieldDefinition[] },
   { id: 'contact', name: '📞 Контакты', icon: 'Phone', fields: [
     { key: 'phone', label: 'Телефон', type: 'text', current: '+7 (999) 123-45-67', preview: 'Номер телефона компании' },
     { key: 'email', label: 'Email', type: 'text', current: 'info@maxisoftzab.ru', preview: 'Email для связи' },
@@ -90,6 +112,15 @@ export function AdminContentPage() {
   const [success, setSuccess] = useState('')
   const [error, setError] = useState('')
   const [uploadingImage, setUploadingImage] = useState<string | null>(null)
+
+  const [portfolioProjects, setPortfolioProjects] = useState<PortfolioProject[]>([])
+  const [portfolioLoading, setPortfolioLoading] = useState(false)
+  const [portfolioEditMode, setPortfolioEditMode] = useState(false)
+  const [editingProject, setEditingProject] = useState<PortfolioProject | null>(null)
+  const [portfolioForm, setPortfolioForm] = useState(EMPTY_PORTFOLIO_FORM)
+  const [portfolioSaving, setPortfolioSaving] = useState(false)
+  const [portfolioDeleting, setPortfolioDeleting] = useState<number | null>(null)
+  const [portfolioUploadingImage, setPortfolioUploadingImage] = useState(false)
 
   useEffect(() => {
     const verifyAdmin = async () => {
@@ -138,9 +169,155 @@ export function AdminContentPage() {
 
   const handleSectionChange = (section: typeof DEFAULT_SECTIONS[0]) => {
     setSelectedSection(section)
-    loadSectionData(section, content)
     setSuccess('')
     setError('')
+    if (section.id === 'portfolio') {
+      setPortfolioEditMode(false)
+      loadPortfolioProjects()
+    } else {
+      loadSectionData(section, content)
+    }
+  }
+
+  const loadPortfolioProjects = async () => {
+    setPortfolioLoading(true)
+    const token = localStorage.getItem('auth_token')
+    try {
+      const response = await fetch(`${ADMIN_API_URL}?action=portfolio`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      })
+      const data = await response.json()
+      setPortfolioProjects(data.projects || [])
+    } catch (err) {
+      console.error('Ошибка загрузки проектов:', err)
+    } finally {
+      setPortfolioLoading(false)
+    }
+  }
+
+  const handlePortfolioImageUpload = async (file: File) => {
+    setPortfolioUploadingImage(true)
+    setError('')
+    try {
+      const reader = new FileReader()
+      reader.onloadend = async () => {
+        const base64 = reader.result as string
+        try {
+          const response = await fetch(UPLOAD_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image_data: base64, image_name: file.name }),
+          })
+          const data = await response.json()
+          if (!response.ok) throw new Error(data.error || 'Ошибка загрузки')
+          setPortfolioForm(prev => ({ ...prev, image_url: data.url }))
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Ошибка загрузки изображения')
+        } finally {
+          setPortfolioUploadingImage(false)
+        }
+      }
+      reader.readAsDataURL(file)
+    } catch {
+      setError('Ошибка чтения файла')
+      setPortfolioUploadingImage(false)
+    }
+  }
+
+  const handlePortfolioCreate = () => {
+    setEditingProject(null)
+    setPortfolioForm({ ...EMPTY_PORTFOLIO_FORM, sort_order: (portfolioProjects.length + 1).toString() })
+    setPortfolioEditMode(true)
+    setError('')
+    setSuccess('')
+  }
+
+  const handlePortfolioEdit = (project: PortfolioProject) => {
+    setEditingProject(project)
+    setPortfolioForm({
+      category: project.category,
+      name: project.name,
+      tech: project.tech,
+      image_url: project.image_url || '',
+      is_large: project.is_large,
+      is_active: project.is_active,
+      sort_order: (project.sort_order ?? 0).toString(),
+    })
+    setPortfolioEditMode(true)
+    setError('')
+    setSuccess('')
+  }
+
+  const handlePortfolioSave = async () => {
+    if (!portfolioForm.name || !portfolioForm.category) {
+      setError('Заполните обязательные поля: название проекта и категория')
+      return
+    }
+
+    setPortfolioSaving(true)
+    setError('')
+    const token = localStorage.getItem('auth_token')
+
+    try {
+      const body = {
+        ...(editingProject ? { id: editingProject.id } : {}),
+        ...portfolioForm,
+        sort_order: parseInt(portfolioForm.sort_order) || 0,
+      }
+
+      const response = await fetch(`${ADMIN_API_URL}?action=portfolio`, {
+        method: editingProject ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Ошибка сохранения')
+      }
+
+      setSuccess(editingProject ? 'Проект обновлен' : 'Проект добавлен')
+      setPortfolioEditMode(false)
+      await loadPortfolioProjects()
+      setTimeout(() => setSuccess(''), 3000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ошибка сохранения')
+    } finally {
+      setPortfolioSaving(false)
+    }
+  }
+
+  const handlePortfolioDelete = async (project: PortfolioProject) => {
+    if (!confirm(`Удалить проект "${project.name}"?`)) return
+
+    setPortfolioDeleting(project.id)
+    setError('')
+    const token = localStorage.getItem('auth_token')
+
+    try {
+      const response = await fetch(`${ADMIN_API_URL}?action=portfolio&id=${project.id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Ошибка удаления')
+      }
+
+      setSuccess('Проект удален')
+      await loadPortfolioProjects()
+      setTimeout(() => setSuccess(''), 3000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ошибка удаления')
+    } finally {
+      setPortfolioDeleting(null)
+    }
   }
 
   const handleImageUpload = async (fieldKey: string, file: File) => {
@@ -337,7 +514,16 @@ export function AdminContentPage() {
                   <h2 className="font-heading text-2xl font-bold text-white">
                     {selectedSection.name}
                   </h2>
-                  {selectedSection.fields.some(f => f.type !== 'image') && (
+                  {selectedSection.id === 'portfolio' && !portfolioEditMode && (
+                    <Button
+                      onClick={handlePortfolioCreate}
+                      className="bg-gradient-to-r from-primary to-[#FF8E53] hover:shadow-lg hover:shadow-primary/30"
+                    >
+                      <Icon name="Plus" size={16} className="mr-2" />
+                      Добавить проект
+                    </Button>
+                  )}
+                  {selectedSection.id !== 'portfolio' && selectedSection.fields.some(f => f.type !== 'image') && (
                     <Button
                       onClick={handleSaveAll}
                       disabled={savingAll || saving}
@@ -365,6 +551,203 @@ export function AdminContentPage() {
                   </div>
                 )}
 
+                {selectedSection.id === 'portfolio' ? (
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-6">
+                      Эти проекты отображаются в блоке «Наши разработки — Реализованные проекты» на главной странице сайта для всех посетителей.
+                    </p>
+
+                    {portfolioEditMode && (
+                      <div className="border border-primary/20 rounded-xl p-6 bg-background/30 mb-6">
+                        <h3 className="font-heading text-lg font-bold text-white mb-4">
+                          {editingProject ? 'Редактирование проекта' : 'Новый проект'}
+                        </h3>
+
+                        <div className="space-y-4">
+                          <div className="grid md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-white mb-2">Категория *</label>
+                              <Input
+                                value={portfolioForm.category}
+                                onChange={(e) => setPortfolioForm({ ...portfolioForm, category: e.target.value })}
+                                placeholder="Веб-приложение"
+                                className="bg-background/50 border-primary/30 focus:border-primary"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-white mb-2">Название проекта *</label>
+                              <Input
+                                value={portfolioForm.name}
+                                onChange={(e) => setPortfolioForm({ ...portfolioForm, name: e.target.value })}
+                                placeholder="Система управления автопарком AutoFleet Pro"
+                                className="bg-background/50 border-primary/30 focus:border-primary"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-white mb-2">Технологии</label>
+                            <Input
+                              value={portfolioForm.tech}
+                              onChange={(e) => setPortfolioForm({ ...portfolioForm, tech: e.target.value })}
+                              placeholder="React / Node.js / PostgreSQL"
+                              className="bg-background/50 border-primary/30 focus:border-primary"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-white mb-2">Фото проекта</label>
+                            <div className="flex gap-2">
+                              <Input
+                                value={portfolioForm.image_url}
+                                onChange={(e) => setPortfolioForm({ ...portfolioForm, image_url: e.target.value })}
+                                placeholder="https://example.com/image.jpg"
+                                className="bg-background/50 border-primary/30 focus:border-primary"
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="shrink-0 border-primary/30"
+                                disabled={portfolioUploadingImage}
+                                onClick={() => {
+                                  const input = document.createElement('input')
+                                  input.type = 'file'
+                                  input.accept = 'image/*'
+                                  input.onchange = (e) => {
+                                    const file = (e.target as HTMLInputElement).files?.[0]
+                                    if (file) handlePortfolioImageUpload(file)
+                                  }
+                                  input.click()
+                                }}
+                              >
+                                {portfolioUploadingImage ? <Icon name="Loader2" size={16} className="animate-spin" /> : <Icon name="Upload" size={16} />}
+                              </Button>
+                            </div>
+                            {portfolioForm.image_url && (
+                              <img src={portfolioForm.image_url} alt="preview" className="mt-2 h-32 rounded-lg object-cover" />
+                            )}
+                          </div>
+
+                          <div className="grid md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-white mb-2">Порядок сортировки</label>
+                              <Input
+                                type="number"
+                                value={portfolioForm.sort_order}
+                                onChange={(e) => setPortfolioForm({ ...portfolioForm, sort_order: e.target.value })}
+                                placeholder="1"
+                                className="bg-background/50 border-primary/30 focus:border-primary"
+                              />
+                            </div>
+                            <div className="flex items-end gap-6 pb-2">
+                              <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={portfolioForm.is_large}
+                                  onChange={(e) => setPortfolioForm({ ...portfolioForm, is_large: e.target.checked })}
+                                  className="w-4 h-4"
+                                />
+                                <span className="text-sm text-white">Крупная карточка</span>
+                              </label>
+                              <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={portfolioForm.is_active}
+                                  onChange={(e) => setPortfolioForm({ ...portfolioForm, is_active: e.target.checked })}
+                                  className="w-4 h-4"
+                                />
+                                <span className="text-sm text-white">Показывать на сайте</span>
+                              </label>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-3 pt-2">
+                            <Button
+                              onClick={handlePortfolioSave}
+                              disabled={portfolioSaving}
+                              className="bg-gradient-to-r from-primary to-[#FF8E53] hover:shadow-lg hover:shadow-primary/30"
+                            >
+                              {portfolioSaving ? (
+                                <>
+                                  <Icon name="Loader2" size={16} className="animate-spin mr-2" />
+                                  Сохранение...
+                                </>
+                              ) : (
+                                'Сохранить'
+                              )}
+                            </Button>
+                            <Button
+                              onClick={() => setPortfolioEditMode(false)}
+                              variant="outline"
+                              className="border-primary/30"
+                            >
+                              Отмена
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {portfolioLoading ? (
+                      <div className="flex justify-center py-12">
+                        <Icon name="Loader2" size={32} className="text-primary animate-spin" />
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {portfolioProjects.map((project) => (
+                          <div
+                            key={project.id}
+                            className="bg-background/30 border border-primary/20 rounded-xl overflow-hidden hover:border-primary/40 transition-all"
+                          >
+                            <div className="relative h-36 overflow-hidden">
+                              {project.image_url ? (
+                                <img src={project.image_url} alt={project.name} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full bg-primary/10 flex items-center justify-center">
+                                  <Icon name="Image" size={28} className="text-primary/40" />
+                                </div>
+                              )}
+                              <div className="absolute top-2 right-2 flex gap-1.5">
+                                {project.is_large && (
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/90 text-white">Крупная</span>
+                                )}
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${project.is_active ? 'bg-green-500/90 text-white' : 'bg-red-500/90 text-white'}`}>
+                                  {project.is_active ? 'Активен' : 'Скрыт'}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="p-4">
+                              <p className="text-xs text-primary mb-1">{project.category}</p>
+                              <h4 className="font-heading text-sm font-bold text-white mb-1 line-clamp-2">{project.name}</h4>
+                              <p className="text-xs text-muted-foreground mb-3 line-clamp-1">{project.tech}</p>
+                              <div className="flex gap-2">
+                                <Button onClick={() => handlePortfolioEdit(project)} size="sm" variant="outline" className="flex-1 border-primary/30">
+                                  <Icon name="Pencil" size={14} className="mr-1.5" />
+                                  Изменить
+                                </Button>
+                                <Button
+                                  onClick={() => handlePortfolioDelete(project)}
+                                  disabled={portfolioDeleting === project.id}
+                                  size="sm"
+                                  variant="outline"
+                                  className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                                >
+                                  {portfolioDeleting === project.id ? <Icon name="Loader2" size={14} className="animate-spin" /> : <Icon name="Trash2" size={14} />}
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+
+                        {portfolioProjects.length === 0 && (
+                          <div className="col-span-full text-center py-12 text-muted-foreground">
+                            Пока нет ни одного проекта. Нажмите «Добавить проект».
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : (
                 <div className="space-y-8">
                   {selectedSection.fields.map((field) => (
                     <div key={field.key} className="border border-primary/20 rounded-xl p-6 bg-background/30 hover:border-primary/40 transition-all">
@@ -468,7 +851,9 @@ export function AdminContentPage() {
                     </div>
                   ))}
                 </div>
+                )}
 
+                {selectedSection.id !== 'portfolio' && (
                 <div className="mt-8 p-4 bg-primary/5 rounded-lg border border-primary/20">
                   <div className="flex items-start gap-3">
                     <Icon name="Info" size={20} className="text-primary mt-0.5 flex-shrink-0" />
@@ -480,6 +865,7 @@ export function AdminContentPage() {
                     </div>
                   </div>
                 </div>
+                )}
               </div>
             </div>
           </div>

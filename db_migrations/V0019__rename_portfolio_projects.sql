@@ -1,0 +1,2 @@
+UPDATE t_p13776910_data_analytics_solut.portfolio_projects SET category = 'Веб-приложение', name = 'АСУБТ', tech = '', image_url = '', is_large = true, is_active = true, sort_order = 1, updated_at = NOW() WHERE id = 1;
+UPDATE t_p13776910_data_analytics_solut.portfolio_projects SET category = 'Веб-приложение', name = 'Горный контроль', tech = '', image_url = '', is_large = false, is_active = true, sort_order = 2, updated_at = NOW() WHERE id = 2;

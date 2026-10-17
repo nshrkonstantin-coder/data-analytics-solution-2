@@ -31,6 +31,7 @@ interface PortfolioProject {
   category: string
   name: string
   tech: string
+  description: string
   image_url: string
   is_large: boolean
   is_active: boolean
@@ -41,6 +42,7 @@ const EMPTY_PORTFOLIO_FORM = {
   category: '',
   name: '',
   tech: '',
+  description: '',
   image_url: '',
   is_large: false,
   is_active: true,
@@ -238,6 +240,7 @@ export function AdminContentPage() {
       category: project.category,
       name: project.name,
       tech: project.tech,
+      description: project.description || '',
       image_url: project.image_url || '',
       is_large: project.is_large,
       is_active: project.is_active,
@@ -592,6 +595,17 @@ export function AdminContentPage() {
                               onChange={(e) => setPortfolioForm({ ...portfolioForm, tech: e.target.value })}
                               placeholder="React / Node.js / PostgreSQL"
                               className="bg-background/50 border-primary/30 focus:border-primary"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-white mb-2">Описание</label>
+                            <textarea
+                              value={portfolioForm.description}
+                              onChange={(e) => setPortfolioForm({ ...portfolioForm, description: e.target.value })}
+                              rows={5}
+                              placeholder="Подробное описание проекта"
+                              className="w-full bg-background/50 border border-primary/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors resize-none"
                             />
                           </div>
 

@@ -17,6 +17,7 @@ interface PortfolioProject {
   category: string
   name: string
   tech: string
+  description?: string
   image_url: string
   is_large: boolean
   is_active: boolean
@@ -27,8 +28,8 @@ const fallbackItems: PortfolioProject[] = [
   {
     id: 1,
     category: "Веб-приложение",
-    name: "Система управления автопарком AutoFleet Pro",
-    tech: "React / Node.js / PostgreSQL",
+    name: "АСУБТ",
+    tech: "ПАБ / Производственный контроль",
     image_url: "",
     is_large: true,
     is_active: true,
@@ -36,9 +37,9 @@ const fallbackItems: PortfolioProject[] = [
   },
   {
     id: 2,
-    category: "Корпоративный сайт",
-    name: "Портал для логистической компании",
-    tech: "Vue.js / Laravel",
+    category: "Горно-рудная промышленность",
+    name: "Горный контроль",
+    tech: "Учёт и контроль персонала",
     image_url: "",
     is_large: false,
     is_active: true,
@@ -93,9 +94,9 @@ export function TestimonialsSection() {
               key={item.id}
               className={`${
                 item.is_large ? 'md:col-span-2' : ''
-              } h-[300px] bg-gradient-to-br from-card/80 to-card/40 border-border hover:border-primary/30 transition-all duration-300 overflow-hidden group relative`}
+              } min-h-[300px] bg-gradient-to-br from-card/80 to-card/40 border-border hover:border-primary/30 transition-all duration-300 overflow-hidden group relative`}
             >
-              <CardContent className="p-0 h-full relative">
+              <CardContent className="p-0 h-full min-h-[300px] relative">
                 {item.image_url && (
                   <img
                     src={item.image_url}
@@ -103,18 +104,22 @@ export function TestimonialsSection() {
                     className="absolute inset-0 w-full h-full object-cover"
                   />
                 )}
-                {/* Gradient overlay on hover */}
-                <div className="absolute inset-0 bg-gradient-to-t from-background/95 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-8">
+                <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/60 to-transparent flex items-end p-6 overflow-y-auto">
                   <div>
                     <div className="text-primary font-heading font-semibold text-sm uppercase tracking-wider mb-2">
                       {item.category}
                     </div>
-                    <h3 className="text-white text-2xl font-bold font-heading mb-2">
+                    <h3 className="text-white text-xl font-bold font-heading mb-2">
                       {item.name}
                     </h3>
-                    <div className="text-secondary text-sm font-body">
+                    <div className="text-secondary text-sm font-body mb-2">
                       {item.tech}
                     </div>
+                    {item.description && (
+                      <p className="text-white/80 text-sm font-body leading-relaxed">
+                        {item.description}
+                      </p>
+                    )}
                   </div>
                 </div>
               </CardContent>

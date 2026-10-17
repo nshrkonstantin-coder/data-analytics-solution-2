@@ -618,12 +618,13 @@ def create_portfolio_project(conn, body: dict) -> dict:
     cursor = conn.cursor()
     cursor.execute(f"""
         INSERT INTO {SCHEMA}.portfolio_projects
-            (category, name, tech, image_url, is_large, is_active, sort_order)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
+            (category, name, tech, description, image_url, is_large, is_active, sort_order)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
     """, (
         body.get('category', ''),
         body.get('name', ''),
         body.get('tech', ''),
+        body.get('description', ''),
         body.get('image_url', ''),
         bool(body.get('is_large', False)),
         bool(body.get('is_active', True)),
@@ -648,13 +649,14 @@ def update_portfolio_project(conn, body: dict) -> dict:
     cursor = conn.cursor()
     cursor.execute(f"""
         UPDATE {SCHEMA}.portfolio_projects
-        SET category = %s, name = %s, tech = %s, image_url = %s,
+        SET category = %s, name = %s, tech = %s, description = %s, image_url = %s,
             is_large = %s, is_active = %s, sort_order = %s, updated_at = NOW()
         WHERE id = %s
     """, (
         body.get('category', ''),
         body.get('name', ''),
         body.get('tech', ''),
+        body.get('description', ''),
         body.get('image_url', ''),
         bool(body.get('is_large', False)),
         bool(body.get('is_active', True)),

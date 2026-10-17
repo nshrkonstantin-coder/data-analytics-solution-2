@@ -100,21 +100,28 @@ export const authService = {
       })
 
       console.log('[AUTH] Verify response status:', response.status)
-      const data = await response.json()
+      const data = await response.json().catch(() => ({}))
       console.log('[AUTH] Verify response data:', data)
 
-      if (!response.ok) {
-        console.error('[AUTH] Verification failed, clearing tokens')
+      if (response.status === 401 || response.status === 403) {
+        console.error('[AUTH] Session expired, clearing tokens')
         localStorage.removeItem('auth_token')
         localStorage.removeItem('user')
         return { valid: false }
       }
 
+      if (!response.ok) {
+        const cachedUser = this.getUser()
+        return cachedUser ? { valid: true, user: cachedUser } : { valid: false }
+      }
+
       console.log('[AUTH] Verification successful')
+      if (data.user) localStorage.setItem('user', JSON.stringify(data.user))
       return data
     } catch (err) {
       console.error('[AUTH] Verification error:', err)
-      return { valid: false }
+      const cachedUser = this.getUser()
+      return cachedUser ? { valid: true, user: cachedUser } : { valid: false }
     }
   },
 
